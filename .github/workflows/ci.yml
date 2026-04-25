@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build-test-uml:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y make g++ default-jre graphviz libcriterion-dev
+      - name: Build
+        run: make re
+
+      - name: Build tests
+        run: make tests_run
+
+      - name: Run tests
+        run: ./tests_run
+
+      - name: Generate UML image
+        run: |
+          curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+          java -jar plantuml.jar docs/uml/diagram.puml
+      - name: Commit UML if changed
+        if: github.actor != 'github-actions[bot]'
+        run: |
+          git config --global user.name "CI Bot"
+          git config --global user.email "ci@bot.com"
+          git add docs/uml/diagram.png
+          git diff --cached --quiet || git commit -m "update UML diagram"
+          git push

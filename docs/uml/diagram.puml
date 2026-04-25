@@ -1,0 +1,18 @@
+@startuml
+
+title Raytracer - Initial Architecture (Parser & Help)
+
+class Parser {
+    - _displayHelp : bool
+    - parseArguments(ac : int, av : char**) : void
+    + Parser(ac : int, av : char**)
+    + shouldDisplayHelp() : bool
+}
+
+class Help {
+    + printHelp() : int
+}
+
+Parser --> Help : uses
+
+@enduml
