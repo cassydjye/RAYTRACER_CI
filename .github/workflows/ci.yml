@@ -61,3 +61,4 @@ jobs:
         run: |
           git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/EpitechPGE2-2025/G-OOP-400-RUN-4-1-raytracer-5.git
           git push mirror HEAD:main
+          
