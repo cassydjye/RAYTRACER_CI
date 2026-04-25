@@ -13,6 +13,9 @@ class Help {
     + printHelp() : int
 }
 
+class TEST {
+}
+
 Parser --> Help : uses
 
 @enduml
