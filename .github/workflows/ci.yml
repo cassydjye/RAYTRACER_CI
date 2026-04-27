@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+    MIRROR_URL: git@github.com:EpitechPGE2-2025/G-OOP-400-RUN-4-1-raytracer-5.git
+
 jobs:
   build-test-uml:
     runs-on: ubuntu-latest
@@ -58,7 +61,11 @@ jobs:
           fetch-depth: 0
 
       - name: Push to mirror repo
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.CI_RAY2 }}
         run: |
-          git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/EpitechPGE2-2025/G-OOP-400-RUN-4-1-raytracer-5.git
-          git push mirror HEAD:main
-          
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          git remote add mirror $MIRROR_URL
+          git push mirror main --force
