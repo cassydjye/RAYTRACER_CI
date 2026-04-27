@@ -62,10 +62,12 @@ jobs:
 
       - name: Push to mirror repo
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.CI_RAY2 }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          printf "%s" "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 700 ~/.ssh
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
           git remote add mirror $MIRROR_URL
-          git push mirror main --force
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519" git push mirror main --force
