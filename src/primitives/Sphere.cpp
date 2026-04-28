@@ -5,7 +5,7 @@
 ** Sphere
 */
 
-#include "Sphere.hpp"
+#include "../../include/primitives/Sphere.hpp"
 #include <cmath>
 
 bool RayTracer::Sphere::hits(const Ray& ray,

@@ -31,3 +31,14 @@ Math::Vector3D Math::Vector3D::operator*(double scalar) const
 {
     return Vector3D(x * scalar, y * scalar, z * scalar);
 }
+
+Math::Vector3D Math::Vector3D::operator/(double scalar) const
+{
+    return Vector3D(x / scalar, y / scalar, z / scalar);
+}
+
+Math::Vector3D Math::Vector3D::normalize() const
+{
+    double len = length();
+    return Vector3D(x / len, y / len, z / len);
+}

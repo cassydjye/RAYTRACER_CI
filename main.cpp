@@ -6,8 +6,8 @@
 */
 
 #include <iostream>
-#include "src/scene/ConfigParser.hpp"
-#include "src/core/Renderer.hpp"
+#include "include/scene/ConfigParser.hpp"
+#include "include/core/Renderer.hpp"
 
 int main(int argc, char* argv[])
 {
