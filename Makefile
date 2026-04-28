@@ -6,6 +6,7 @@
 ##
 
 NAME    = raytracer
+TESTS = tests_run
 
 CXX     = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -Iinclude
@@ -21,6 +22,9 @@ SRC = main.cpp \
       src/core/Renderer.cpp
 
 OBJ = $(SRC:.cpp=.o)
+
+TEST_SRC = tests/test_help.cpp \
+		   src/Help.cpp \
 
 all: $(NAME)
 
