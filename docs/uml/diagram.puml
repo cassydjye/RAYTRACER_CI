@@ -6,6 +6,20 @@
 
 /' Objects '/
 
+class Help {
+	+{static} printHelp() : int
+}
+
+
+class Parser {
+	+Parser(int ac, char** av)
+	+~Parser()
+	-_displayHelp : bool
+	+shouldDisplayHelp() : bool {query}
+	-parseArguments(int ac, char** av) : void
+}
+
+
 namespace RayTracer {
 	class AmbientLight {
 		+AmbientLight(double brightness)
@@ -16,6 +30,14 @@ namespace RayTracer {
 		-_brightness : double
 		+getAmbient() : double {query}
 		+illuminate(const Math::Point3D &, Math::Vector3D &, double& intensity) : void {query}
+	}
+
+	class Camera {
+		+Camera(const Math::Point3D& origin, const Rectangle3D& screen)
+		+~Camera()
+		+origin : Math::Point3D
+		+ray(double u, double v) : Ray {query}
+		+screen : Rectangle3D
 	}
 
 	class ConfigParser {
@@ -74,6 +96,22 @@ namespace RayTracer {
 		+{abstract} hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
 	}
 
+	class Ray {
+		+Ray(const Math::Point3D& origin, const Math::Vector3D& direction)
+		+~Ray()
+		+at(double t) : Math::Point3D {query}
+		+origin : Math::Point3D
+		+direction : Math::Vector3D
+	}
+
+	class Rectangle3D {
+		+Rectangle3D(const Math::Point3D& origin, const Math::Vector3D& bottom, const Math::Vector3D& left)
+		+origin : Math::Point3D
+		+pointAt(double u, double v) : Math::Point3D {query}
+		+bottom_side : Math::Vector3D
+		+left_side : Math::Vector3D
+	}
+
 	class Renderer {
 		+Renderer()
 		+Renderer(const Renderer &)
@@ -127,14 +165,37 @@ namespace RayTracer {
 	}
 
 	class HitRecord {
-		+0.0 : Math::Point3D point{
-		+0.0 : Math::Point3D point{
-		+0.0 : Math::Point3D point{
-		+0.0 : Math::Vector3D normal{
-		+0.0 : Math::Vector3D normal{
-		+0.0 : Math::Vector3D normal{
 		+t : double
 		+material : std::shared_ptr<IMaterial>
+	}
+}
+
+
+namespace Math {
+	class Point3D {
+		+Point3D()
+		+Point3D(double x, double y, double z)
+		+~Point3D()
+		+operator+(const Vector3D& vec) : Point3D {query}
+		+operator-(const Point3D& other) : Vector3D {query}
+		+x : double
+		+y : double
+		+z : double
+	}
+
+	class Vector3D {
+		+Vector3D(double x, double y, double z)
+		+~Vector3D()
+		+normalize() : Vector3D {query}
+		+operator*(double scalar) : Vector3D {query}
+		+operator+(const Vector3D& other) : Vector3D {query}
+		+operator-(const Vector3D& other) : Vector3D {query}
+		+operator/(double scalar) : Vector3D {query}
+		+dot(const Vector3D& other) : double {query}
+		+length() : double {query}
+		+x : double
+		+y : double
+		+z : double
 	}
 }
 
@@ -161,10 +222,16 @@ RayTracer.IPrimitive <|-- RayTracer.Sphere
 
 /' Aggregation relationships '/
 
+RayTracer.Camera *-- RayTracer.Rectangle3D
+
+
 RayTracer.FlatColor *-- RayTracer.Color
 
 
 RayTracer.HitRecord o-- RayTracer.IMaterial
+
+
+RayTracer.Scene *-- RayTracer.Camera
 
 
 RayTracer.Scene o-- RayTracer.ILight
