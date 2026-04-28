@@ -5,12 +5,12 @@
 ** Renderer
 */
 
-#include "Renderer.hpp"
+#include "../../include/core/Renderer.hpp"
 
 #include <algorithm>
 #include <limits>
-#include "Ray.hpp"
-#include "../interfaces/IMaterial.hpp"
+#include "../../include/raytracer/Ray.hpp"
+#include "../../include/interfaces/IMaterial.hpp"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 

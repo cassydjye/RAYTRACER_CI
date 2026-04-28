@@ -19,5 +19,7 @@ namespace RayTracer {
 
         Ray(const Math::Point3D& origin, const Math::Vector3D& direction) : origin(origin), direction(direction) {}
         ~Ray() = default;
+
+        Math::Point3D at(double t) const { return origin + direction * t; }
     };
 }

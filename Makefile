@@ -13,13 +13,14 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -Iinclude
 LDFLAGS  = -lconfig++
 
 SRC = main.cpp \
-      src/Vector.cpp \
-      src/Point3D.cpp \
-      src/Camera.cpp \
-      src/Rectangle3D.cpp \
+      src/math/Point3D.cpp \
+      src/math/Vector3D.cpp \
+      src/core/Renderer.cpp \
       src/primitives/Sphere.cpp \
       src/scene/ConfigParser.cpp \
-      src/core/Renderer.cpp
+      src/raytracer/Camera.cpp \
+      src/raytracer/Rectangle3D.cpp
+
 
 OBJ = $(SRC:.cpp=.o)
 

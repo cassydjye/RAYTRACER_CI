@@ -5,22 +5,22 @@
 ** ConfigParser
 */
 
-#include "ConfigParser.hpp"
+#include "../../include/scene/ConfigParser.hpp"
 
 #include <libconfig.h++>
 #include <cmath>
 #include <stdexcept>
 #include <string>
 
-#include "Camera.hpp"
-#include "Rectangle3D.hpp"
-#include "Point3D.hpp"
-#include "Vector.hpp"
+#include "../../include/raytracer/Camera.hpp"
+#include "../../include/raytracer/Rectangle3D.hpp"
+#include "../../include/math/Point3D.hpp"
+#include "../../include/math/Vector3D.hpp"
 
-#include "../primitives/Sphere.hpp"
-#include "../lights/AmbientLight.hpp"
-#include "../lights/DirectionalLight.hpp"
-#include "../materials/FlatColor.hpp"
+#include "../../include/primitives/Sphere.hpp"
+#include "../../include/light/AmbientLight.hpp"
+#include "../../include/light/DirectionalLight.hpp"
+#include "../../include/materials/FlatColor.hpp"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
