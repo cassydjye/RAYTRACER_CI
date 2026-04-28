@@ -32,7 +32,7 @@ make test
 
 ## UML
 
-![UML Diagram](docs/uml/diagram.png)
+![UML Diagram](uml/diagram.png)
 
 ## 👨‍💻 Auteurs
 
