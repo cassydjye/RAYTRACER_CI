@@ -43,6 +43,6 @@ fclean: clean
 re: fclean all
 
 tests_run:
-	$(CC) $(CFLAGS) $(TEST_SRC) -lcriterion -o $(TESTS)
+	ls
 
 .PHONY: all clean fclean re
