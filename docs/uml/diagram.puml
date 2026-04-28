@@ -1,21 +1,187 @@
 @startuml
 
-title Raytracer - Initial Architecture (Parser & Help)
 
-class Parser {
-    - _displayHelp : bool
-    - parseArguments(ac : int, av : char**) : void
-    + Parser(ac : int, av : char**)
-    + shouldDisplayHelp() : bool
+
+
+
+/' Objects '/
+
+namespace RayTracer {
+	class AmbientLight {
+		+AmbientLight(double brightness)
+		+AmbientLight(const AmbientLight &)
+		+~AmbientLight()
+		+operator=(const AmbientLight &) : AmbientLight&
+		+isAmbient() : bool {query}
+		-_brightness : double
+		+getAmbient() : double {query}
+		+illuminate(const Math::Point3D &, Math::Vector3D &, double& intensity) : void {query}
+	}
+
+	class ConfigParser {
+		+ConfigParser()
+		+ConfigParser(const ConfigParser &)
+		+~ConfigParser()
+		+operator=(const ConfigParser &) : ConfigParser&
+		+parse(const std::string& filename) : Scene {query}
+	}
+
+	class DirectionalLight {
+		+DirectionalLight(const Math::Vector3D& toLight, double intensity)
+		+DirectionalLight(const DirectionalLight &)
+		+~DirectionalLight()
+		+operator=(const DirectionalLight &) : DirectionalLight&
+		-_toLight : Math::Vector3D
+		+isAmbient() : bool {query}
+		-_intensity : double
+		+getAmbient() : double {query}
+		+illuminate(const Math::Point3D &, Math::Vector3D& direction, double& intensity) : void {query}
+	}
+
+	class FlatColor {
+		+FlatColor(const Color& color)
+		+FlatColor(double r, double g, double b)
+		+FlatColor(const FlatColor &)
+		+~FlatColor()
+		-_color : Color
+		+getColor() : Color {query}
+		+operator=(const FlatColor &) : FlatColor&
+	}
+
+	abstract class ILight {
+		+ILight()
+		+ILight(const ILight &)
+		+~ILight()
+		+operator=(const ILight &) : ILight&
+		+{abstract} isAmbient() : bool {query}
+		+{abstract} getAmbient() : double {query}
+		+{abstract} illuminate(const Math::Point3D& point, Math::Vector3D& direction, double& intensity) : void {query}
+	}
+
+	abstract class IMaterial {
+		+IMaterial()
+		+IMaterial(const IMaterial &)
+		+~IMaterial()
+		+{abstract} getColor() : Color {query}
+		+operator=(const IMaterial &) : IMaterial&
+	}
+
+	abstract class IPrimitive {
+		+IPrimitive()
+		+IPrimitive(const IPrimitive &)
+		+~IPrimitive()
+		+operator=(const IPrimitive &) : IPrimitive&
+		+{abstract} hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+	}
+
+	class Renderer {
+		+Renderer()
+		+Renderer(const Renderer &)
+		+~Renderer()
+		-traceRay(const Ray& ray, const Scene& scene) : Color {query}
+		+operator=(const Renderer &) : Renderer&
+		-{static} toChannel(double v) : int
+		+render(const Scene& scene, std::ostream& out) : void {query}
+	}
+
+	class Scene {
+		+Scene(const Camera& camera, int width, int height)
+		+Scene(Scene& &)
+		+~Scene()
+		-_camera : Camera
+		+getCamera() : Camera& {query}
+		+operator=(Scene& &) : Scene&
+		-_height : int
+		-_width : int
+		+getHeight() : int {query}
+		+getWidth() : int {query}
+		-_lights : std::vector<std::unique_ptr<ILight>>
+		+getLights() : std::vector<std::unique_ptr<ILight>>& {query}
+		-_primitives : std::vector<std::unique_ptr<IPrimitive>>
+		+getPrimitives() : std::vector<std::unique_ptr<IPrimitive>>& {query}
+		+addLight(std::unique_ptr<ILight> l) : void
+		+addPrimitive(std::unique_ptr<IPrimitive> p) : void
+	}
+
+	class Sphere {
+		+Sphere(const Math::Point3D& center, double radius, std::shared_ptr<IMaterial> material)
+		+Sphere(const Sphere &)
+		+~Sphere()
+		-_center : Math::Point3D
+		+operator=(const Sphere &) : Sphere&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_radius : double
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class Color {
+		+Color()
+		+Color(double r, double g, double b)
+		+operator*(double s) : Color {query}
+		+operator*(const Color& o) : Color {query}
+		+operator+(const Color& o) : Color {query}
+		+operator+=(const Color& o) : Color&
+		+b : double
+		+g : double
+		+r : double
+	}
+
+	class HitRecord {
+		+0.0 : Math::Point3D point{
+		+0.0 : Math::Point3D point{
+		+0.0 : Math::Point3D point{
+		+0.0 : Math::Vector3D normal{
+		+0.0 : Math::Vector3D normal{
+		+0.0 : Math::Vector3D normal{
+		+t : double
+		+material : std::shared_ptr<IMaterial>
+	}
 }
 
-class Help {
-    + printHelp() : int
-}
 
-class TEST {
-}
 
-Parser --> Help : uses
+
+
+/' Inheritance relationships '/
+
+RayTracer.ILight <|-- RayTracer.AmbientLight
+
+
+RayTracer.ILight <|-- RayTracer.DirectionalLight
+
+
+RayTracer.IMaterial <|-- RayTracer.FlatColor
+
+
+RayTracer.IPrimitive <|-- RayTracer.Sphere
+
+
+
+
+
+/' Aggregation relationships '/
+
+RayTracer.FlatColor *-- RayTracer.Color
+
+
+RayTracer.HitRecord o-- RayTracer.IMaterial
+
+
+RayTracer.Scene o-- RayTracer.ILight
+
+
+RayTracer.Scene o-- RayTracer.IPrimitive
+
+
+RayTracer.Sphere o-- RayTracer.IMaterial
+
+
+
+
+
+
+/' Nested objects '/
+
+
 
 @enduml
