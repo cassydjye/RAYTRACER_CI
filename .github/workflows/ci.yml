@@ -24,8 +24,8 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y make g++ default-jre graphviz libcriterion-dev
-          sudo apt install libconfig++-dev
+          sudo apt-get install -y make g++ default-jre graphviz libcriterion-dev libconfig++-dev
+          pip install hpp2plantuml
 
       - name: Build
         run: make re
@@ -35,6 +35,10 @@ jobs:
 
       #- name: Run tests
       #  run: ./tests_run
+
+      - name: Generate UML diagram from headers
+        run: |
+          hpp2plantuml -i "src/**/*.hpp" -o docs/uml/diagram.puml
 
       - name: Generate UML image
         run: |
@@ -46,7 +50,7 @@ jobs:
         run: |
           git config --global user.name "CI Bot"
           git config --global user.email "ci@bot.com"
-          git add docs/uml/diagram.png
+          git add docs/uml/diagram.puml docs/uml/diagram.png
           git diff --cached --quiet || git commit -m "update UML diagram"
           git push
 
