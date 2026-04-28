@@ -38,7 +38,9 @@ jobs:
 
       - name: Generate UML diagram from headers
         run: |
-          hpp2plantuml -i "src/**/*.hpp" -o docs/uml/diagram.puml
+          find src include -name "*.hpp" | sort | xargs -I{} echo "-i {}" | tr '\n' ' ' | xargs hpp2plantuml -o docs/uml/diagram.puml
+          sed -i '/^\s*+[0-9]/d' docs/uml/diagram.puml
+          cat docs/uml/diagram.puml
 
       - name: Generate UML image
         run: |
