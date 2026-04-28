@@ -6,6 +6,9 @@
 */
 
 #include "../../include/scene/ConfigParser.hpp"
+#include "../../include/scene/SceneBuilder.hpp"
+#include "../../include/scene/PrimitiveFactory.hpp"
+#include "../../include/scene/LightFactory.hpp"
 
 #include <libconfig.h++>
 #include <cmath>
@@ -33,6 +36,49 @@ static double asDouble(const libconfig::Setting& s)
     throw std::runtime_error(std::string("expected a number at: ") + s.getPath());
 }
 
+// ── factory registration ──────────────────────────────────────────────────────
+
+static RayTracer::PrimitiveFactory makePrimitiveFactory()
+{
+    RayTracer::PrimitiveFactory f;
+
+    f.registerType("sphere", [](const libconfig::Setting& s) {
+        double x = asDouble(s["x"]);
+        double y = asDouble(s["y"]);
+        double z = asDouble(s["z"]);
+        double r = asDouble(s["r"]);
+        // Colors in the config are in [0, 255]; normalize to [0, 1].
+        double cr = asDouble(s["color"]["r"]) / 255.0;
+        double cg = asDouble(s["color"]["g"]) / 255.0;
+        double cb = asDouble(s["color"]["b"]) / 255.0;
+        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
+        return std::make_unique<RayTracer::Sphere>(Math::Point3D(x, y, z), r, mat);
+    });
+
+    return f;
+}
+
+static RayTracer::LightFactory makeLightFactory()
+{
+    RayTracer::LightFactory f;
+
+    f.registerType("ambient", [](const libconfig::Setting& s) {
+        return std::make_unique<RayTracer::AmbientLight>(asDouble(s));
+    });
+
+    f.registerType("directional", [](const libconfig::Setting& s) {
+        double dx = asDouble(s["x"]);
+        double dy = asDouble(s["y"]);
+        double dz = asDouble(s["z"]);
+        double intensity = s.exists("intensity") ? asDouble(s["intensity"]) : 1.0;
+        return std::make_unique<RayTracer::DirectionalLight>(
+            Math::Vector3D(dx, dy, dz), intensity
+        );
+    });
+
+    return f;
+}
+
 // ── camera ───────────────────────────────────────────────────────────────────
 
 static std::pair<RayTracer::Camera, std::pair<int,int>>
@@ -47,8 +93,6 @@ parseCamera(const libconfig::Setting& cam)
 
     double fov = asDouble(cam["fieldOfView"]);
 
-    // Build the virtual screen from FOV and aspect ratio.
-    // Camera looks down -Z. Screen sits at z = pz - 1.
     double aspect   = static_cast<double>(width) / static_cast<double>(height);
     double halfH    = std::tan((fov * M_PI / 180.0) / 2.0);
     double halfW    = aspect * halfH;
@@ -64,54 +108,49 @@ parseCamera(const libconfig::Setting& cam)
 
 // ── primitives ───────────────────────────────────────────────────────────────
 
-static void parseSpheres(const libconfig::Setting& primitives, RayTracer::Scene& scene)
+static void parsePrimitives(const libconfig::Setting& primitives,
+                             RayTracer::SceneBuilder& builder,
+                             const RayTracer::PrimitiveFactory& factory)
 {
-    if (!primitives.exists("spheres"))
-        return;
-    const libconfig::Setting& spheres = primitives["spheres"];
-    for (int i = 0; i < spheres.getLength(); ++i) {
-        const libconfig::Setting& s = spheres[i];
-
-        double x = asDouble(s["x"]);
-        double y = asDouble(s["y"]);
-        double z = asDouble(s["z"]);
-        double r = asDouble(s["r"]);
-
-        // Colors in the config are in [0, 255]; normalize to [0, 1].
-        double cr = asDouble(s["color"]["r"]) / 255.0;
-        double cg = asDouble(s["color"]["g"]) / 255.0;
-        double cb = asDouble(s["color"]["b"]) / 255.0;
-
-        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
-        scene.addPrimitive(
-            std::make_unique<RayTracer::Sphere>(Math::Point3D(x, y, z), r, mat)
-        );
+    // Each child group name is a type key (e.g. "spheres" → type "sphere").
+    // Convention: config key = type name + "s" (plural).
+    for (int g = 0; g < primitives.getLength(); ++g) {
+        const libconfig::Setting& group = primitives[g];
+        std::string typeName = group.getName();
+        // Strip trailing 's' to get the singular type name.
+        if (!typeName.empty() && typeName.back() == 's')
+            typeName.pop_back();
+        if (!factory.knows(typeName))
+            throw std::runtime_error("parsePrimitives: no factory for type \"" + typeName + "\"");
+        for (int i = 0; i < group.getLength(); ++i)
+            builder.addPrimitive(factory.create(typeName, group[i]));
     }
 }
 
 // ── lights ───────────────────────────────────────────────────────────────────
 
-static void parseLights(const libconfig::Setting& lights, RayTracer::Scene& scene)
+static void parseLights(const libconfig::Setting& lights,
+                        RayTracer::SceneBuilder& builder,
+                        const RayTracer::LightFactory& factory,
+                        double diffuseIntensity)
 {
-    if (lights.exists("ambient")) {
-        double brightness = asDouble(lights["ambient"]);
-        scene.addLight(std::make_unique<RayTracer::AmbientLight>(brightness));
-    }
-
-    // `diffuse` is the intensity multiplier for directional lights.
-    double diffuseIntensity = 1.0;
-    if (lights.exists("diffuse"))
-        diffuseIntensity = asDouble(lights["diffuse"]);
+    if (lights.exists("ambient"))
+        builder.addLight(factory.create("ambient", lights["ambient"]));
 
     if (lights.exists("directional")) {
         const libconfig::Setting& dirs = lights["directional"];
         for (int i = 0; i < dirs.getLength(); ++i) {
-            double dx = asDouble(dirs[i]["x"]);
-            double dy = asDouble(dirs[i]["y"]);
-            double dz = asDouble(dirs[i]["z"]);
-            scene.addLight(std::make_unique<RayTracer::DirectionalLight>(
-                Math::Vector3D(dx, dy, dz), diffuseIntensity
-            ));
+            // Inject the scene-level diffuse intensity if the entry has none.
+            if (!dirs[i].exists("intensity")) {
+                double dx = asDouble(dirs[i]["x"]);
+                double dy = asDouble(dirs[i]["y"]);
+                double dz = asDouble(dirs[i]["z"]);
+                builder.addLight(std::make_unique<RayTracer::DirectionalLight>(
+                    Math::Vector3D(dx, dy, dz), diffuseIntensity
+                ));
+            } else {
+                builder.addLight(factory.create("directional", dirs[i]));
+            }
         }
     }
 }
@@ -133,14 +172,25 @@ RayTracer::Scene RayTracer::ConfigParser::parse(const std::string& filename) con
         );
     }
 
+    PrimitiveFactory primFactory  = makePrimitiveFactory();
+    LightFactory     lightFactory = makeLightFactory();
+    SceneBuilder     builder;
+
     try {
         auto [camera, res] = parseCamera(cfg.lookup("camera"));
-        Scene scene(camera, res.first, res.second);
+        builder.setCamera(camera, res.first, res.second);
+
         if (cfg.exists("primitives"))
-            parseSpheres(cfg.lookup("primitives"), scene);
-        if (cfg.exists("lights"))
-            parseLights(cfg.lookup("lights"), scene);
-        return scene;
+            parsePrimitives(cfg.lookup("primitives"), builder, primFactory);
+
+        if (cfg.exists("lights")) {
+            double diffuseIntensity = 1.0;
+            if (cfg.lookup("lights").exists("diffuse"))
+                diffuseIntensity = asDouble(cfg.lookup("lights")["diffuse"]);
+            parseLights(cfg.lookup("lights"), builder, lightFactory, diffuseIntensity);
+        }
+
+        return builder.build();
     } catch (const libconfig::SettingNotFoundException& e) {
         throw std::runtime_error(
             std::string("Missing required setting: ") + e.getPath()
