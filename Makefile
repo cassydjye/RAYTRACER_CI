@@ -17,6 +17,7 @@ SRC = main.cpp \
       src/math/Vector3D.cpp \
       src/core/Renderer.cpp \
       src/primitives/Sphere.cpp \
+      src/primitives/Plane.cpp \
       src/scene/ConfigParser.cpp \
       src/raytracer/Camera.cpp \
       src/raytracer/Rectangle3D.cpp

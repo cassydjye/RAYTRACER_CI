@@ -21,6 +21,7 @@
 #include "../../include/math/Vector3D.hpp"
 
 #include "../../include/primitives/Sphere.hpp"
+#include "../../include/primitives/Plane.hpp"
 #include "../../include/light/AmbientLight.hpp"
 #include "../../include/light/DirectionalLight.hpp"
 #include "../../include/materials/FlatColor.hpp"
@@ -53,6 +54,23 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
         double cb = asDouble(s["color"]["b"]) / 255.0;
         auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
         return std::make_unique<RayTracer::Sphere>(Math::Point3D(x, y, z), r, mat);
+    });
+
+    f.registerType("plane", [](const libconfig::Setting& s) {
+        double x = asDouble(s["x"]);
+        double y = asDouble(s["y"]);
+        double z = asDouble(s["z"]);
+        double nx = asDouble(s["nx"]);
+        double ny = asDouble(s["ny"]);
+        double nz = asDouble(s["nz"]);
+        // Colors in the config are in [0, 255]; normalize to [0, 1].
+        double cr = asDouble(s["color"]["r"]) / 255.0;
+        double cg = asDouble(s["color"]["g"]) / 255.0;
+        double cb = asDouble(s["color"]["b"]) / 255.0;
+        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
+        return std::make_unique<RayTracer::Plane>(
+            Math::Point3D(x, y, z), Math::Vector3D(nx, ny, nz), mat
+        );
     });
 
     return f;
