@@ -1,10 +1,15 @@
 @startuml
 
+
+
+
+
 /' Objects '/
 
 class Help {
 	+{static} printHelp() : int
 }
+
 
 class Parser {
 	+Parser(int ac, char** av)
@@ -13,6 +18,7 @@ class Parser {
 	+shouldDisplayHelp() : bool {query}
 	-parseArguments(int ac, char** av) : void
 }
+
 
 namespace RayTracer {
 	class AmbientLight {
@@ -215,7 +221,6 @@ namespace RayTracer {
 	}
 }
 
-newpage
 
 namespace Math {
 	class Point3D {
