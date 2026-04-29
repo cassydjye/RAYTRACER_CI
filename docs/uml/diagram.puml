@@ -107,6 +107,18 @@ namespace RayTracer {
 		+registerType(const std::string& name, function<std::unique_ptr<ILight>( const libconfig::Setting& )> creator) : void
 	}
 
+	class Plane {
+		+Plane(const Math::Point3D& point, const Math::Vector3D& normal, std::shared_ptr<IMaterial> material)
+		+Plane()
+		+Plane(const Plane &)
+		+~Plane()
+		-_point : Math::Point3D
+		-_normal : Math::Vector3D
+		+operator=(const Plane &) : Plane&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
 	class PrimitiveFactory {
 		+PrimitiveFactory()
 		+PrimitiveFactory(const PrimitiveFactory &)
@@ -253,6 +265,9 @@ RayTracer.ILight <|-- RayTracer.DirectionalLight
 RayTracer.IMaterial <|-- RayTracer.FlatColor
 
 
+RayTracer.IPrimitive <|-- RayTracer.Plane
+
+
 RayTracer.IPrimitive <|-- RayTracer.Sphere
 
 
@@ -268,6 +283,9 @@ RayTracer.FlatColor *-- RayTracer.Color
 
 
 RayTracer.HitRecord o-- RayTracer.IMaterial
+
+
+RayTracer.Plane o-- RayTracer.IMaterial
 
 
 RayTracer.Scene *-- RayTracer.Camera
