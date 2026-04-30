@@ -1,4 +1,5 @@
 @startuml
+scale 2000 width
 
 !include math.puml
 !include raytracer.puml
