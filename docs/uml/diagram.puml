@@ -48,6 +48,20 @@ namespace RayTracer {
 		+parse(const std::string& filename) : Scene {query}
 	}
 
+	class Cylinder {
+		+Cylinder()
+		+Cylinder(const Cylinder &)
+		+Cylinder(const Math::Point3D& baseCenter, const Math::Vector3D& axis, double radius, double height, std::shared_ptr<IMaterial> material)
+		+~Cylinder()
+		+operator=(const Cylinder &) : Cylinder&
+		-_baseCenter : Math::Point3D
+		-_axis : Math::Vector3D
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_height : double
+		-_radius : double
+		-_material : std::shared_ptr<IMaterial>
+	}
+
 	class DirectionalLight {
 		+DirectionalLight(const Math::Vector3D& toLight, double intensity)
 		+DirectionalLight(const DirectionalLight &)
@@ -265,6 +279,9 @@ RayTracer.ILight <|-- RayTracer.DirectionalLight
 RayTracer.IMaterial <|-- RayTracer.FlatColor
 
 
+RayTracer.IPrimitive <|-- RayTracer.Cylinder
+
+
 RayTracer.IPrimitive <|-- RayTracer.Plane
 
 
@@ -277,6 +294,9 @@ RayTracer.IPrimitive <|-- RayTracer.Sphere
 /' Aggregation relationships '/
 
 RayTracer.Camera *-- RayTracer.Rectangle3D
+
+
+RayTracer.Cylinder o-- RayTracer.IMaterial
 
 
 RayTracer.FlatColor *-- RayTracer.Color
