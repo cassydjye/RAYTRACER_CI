@@ -1,18 +1,3 @@
-
-class Help {
-	+{static} printHelp() : int
-}
-
-
-class Parser {
-	+Parser(int ac, char** av)
-	+~Parser()
-	-_displayHelp : bool
-	+shouldDisplayHelp() : bool {query}
-	-parseArguments(int ac, char** av) : void
-}
-
-
 namespace RayTracer {
 	class AmbientLight {
 		+AmbientLight(double brightness)
