@@ -1,5 +1,3 @@
-![CI](https://github.com/cassydjye/G-OOP-400-RUN-4-1-raytracer-5/actions/workflows/ci.yml/badge.svg)
-
 # 🚀 Raytracer
 
 ## 📝 Description
@@ -32,7 +30,7 @@ make test
 
 ## UML
 
-![UML Diagram](uml/diagram.png)
+![UML Diagram](uml/global.png)
 
 ## 👨‍💻 Auteurs
 
