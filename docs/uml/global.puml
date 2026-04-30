@@ -3,4 +3,13 @@
 !include math.puml
 !include raytracer.puml
 
+namespace Math {
+    class Point3D
+    class Vector3D
+}
+
+class Help {
+    +printHelp() : int
+}
+
 @enduml
