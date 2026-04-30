@@ -6,6 +6,7 @@
 */
 
 #include "../include/Parser.hpp"
+#include <stdexcept>
 
 Parser::Parser(int ac, char **av) : _displayHelp(false)
 {
@@ -18,11 +19,9 @@ bool Parser::shouldDisplayHelp() const
 }
 
 void Parser::parseArguments(int ac, char **av)
-{
-    if (ac != 2)
-        return;
-    if (std::string(av[1]) == "-h" || std::string(av[1]) == "--help") {
+{    if (ac == 2 && std::string(av[1]) == "--help") {
         _displayHelp = true;
-        return;
+    } else if (ac != 2) {
+        printf("USAGE: ./raytracer <SCENE_FILE>\n");
     }
 }
