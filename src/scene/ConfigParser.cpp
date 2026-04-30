@@ -23,6 +23,7 @@
 #include "../../include/primitives/Sphere.hpp"
 #include "../../include/primitives/Plane.hpp"
 #include "../../include/primitives/Cylinder.hpp"
+#include "../../include/primitives/Triangles.hpp"
 #include "../../include/light/AmbientLight.hpp"
 #include "../../include/light/DirectionalLight.hpp"
 #include "../../include/materials/FlatColor.hpp"
@@ -90,6 +91,29 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
         auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
         return std::make_unique<RayTracer::Cylinder>(
             Math::Point3D(x, y, z), Math::Vector3D(ax, ay, az), r, h, mat
+        );
+    });
+
+    f.registerType("triangle", [](const libconfig::Setting& s) {
+        double v0x = asDouble(s["v0"]["x"]);
+        double v0y = asDouble(s["v0"]["y"]);
+        double v0z = asDouble(s["v0"]["z"]);
+        double v1x = asDouble(s["v1"]["x"]);
+        double v1y = asDouble(s["v1"]["y"]);
+        double v1z = asDouble(s["v1"]["z"]);
+        double v2x = asDouble(s["v2"]["x"]);
+        double v2y = asDouble(s["v2"]["y"]);
+        double v2z = asDouble(s["v2"]["z"]);
+        // Colors in the config are in [0, 255]; normalize to [0, 1].
+        double cr = asDouble(s["color"]["r"]) / 255.0;
+        double cg = asDouble(s["color"]["g"]) / 255.0;
+        double cb = asDouble(s["color"]["b"]) / 255.0;
+        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
+        return std::make_unique<RayTracer::Triangles>(
+            Math::Point3D(v0x, v0y, v0z),
+            Math::Point3D(v1x, v1y, v1z),
+            Math::Point3D(v2x, v2y, v2z),
+            mat
         );
     });
 

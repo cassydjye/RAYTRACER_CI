@@ -21,6 +21,7 @@ SRC = main.cpp \
       src/primitives/Sphere.cpp \
       src/primitives/Plane.cpp \
       src/primitives/Cylinder.cpp \
+      src/primitives/Triangles.cpp \
       src/scene/ConfigParser.cpp \
       src/raytracer/Camera.cpp \
       src/raytracer/Rectangle3D.cpp
