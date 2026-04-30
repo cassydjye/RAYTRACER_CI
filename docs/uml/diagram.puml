@@ -217,6 +217,19 @@ namespace RayTracer {
 		-_material : std::shared_ptr<IMaterial>
 	}
 
+	class Triangles {
+		+Triangles()
+		+Triangles(const Triangles &)
+		+Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, std::shared_ptr<IMaterial> material)
+		+~Triangles()
+		-_v0 : Math::Point3D
+		-_v1 : Math::Point3D
+		-_v2 : Math::Point3D
+		+operator=(const Triangles &) : Triangles&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
 	class Color {
 		+Color()
 		+Color(double r, double g, double b)
@@ -288,6 +301,9 @@ RayTracer.IPrimitive <|-- RayTracer.Plane
 RayTracer.IPrimitive <|-- RayTracer.Sphere
 
 
+RayTracer.IPrimitive <|-- RayTracer.Triangles
+
+
 
 
 
@@ -327,6 +343,9 @@ RayTracer.SceneBuilder o-- RayTracer.IPrimitive
 
 
 RayTracer.Sphere o-- RayTracer.IMaterial
+
+
+RayTracer.Triangles o-- RayTracer.IMaterial
 
 
 
