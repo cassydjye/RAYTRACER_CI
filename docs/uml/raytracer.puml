@@ -1,0 +1,305 @@
+
+class Help {
+	+{static} printHelp() : int
+}
+
+
+class Parser {
+	+Parser(int ac, char** av)
+	+~Parser()
+	-_displayHelp : bool
+	+shouldDisplayHelp() : bool {query}
+	-parseArguments(int ac, char** av) : void
+}
+
+
+namespace RayTracer {
+	class AmbientLight {
+		+AmbientLight(double brightness)
+		+AmbientLight(const AmbientLight &)
+		+~AmbientLight()
+		+operator=(const AmbientLight &) : AmbientLight&
+		+isAmbient() : bool {query}
+		-_brightness : double
+		+getAmbient() : double {query}
+		+illuminate(const Math::Point3D &, Math::Vector3D &, double& intensity) : void {query}
+	}
+
+	class Camera {
+		+Camera(const Math::Point3D& origin, const Rectangle3D& screen)
+		+~Camera()
+		+origin : Math::Point3D
+		+ray(double u, double v) : Ray {query}
+		+screen : Rectangle3D
+	}
+
+	class ConfigParser {
+		+ConfigParser()
+		+ConfigParser(const ConfigParser &)
+		+~ConfigParser()
+		+operator=(const ConfigParser &) : ConfigParser&
+		+parse(const std::string& filename) : Scene {query}
+	}
+
+	class Cylinder {
+		+Cylinder()
+		+Cylinder(const Cylinder &)
+		+Cylinder(const Math::Point3D& baseCenter, const Math::Vector3D& axis, double radius, double height, std::shared_ptr<IMaterial> material)
+		+~Cylinder()
+		+operator=(const Cylinder &) : Cylinder&
+		-_baseCenter : Math::Point3D
+		-_axis : Math::Vector3D
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_height : double
+		-_radius : double
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class DirectionalLight {
+		+DirectionalLight(const Math::Vector3D& toLight, double intensity)
+		+DirectionalLight(const DirectionalLight &)
+		+~DirectionalLight()
+		+operator=(const DirectionalLight &) : DirectionalLight&
+		-_toLight : Math::Vector3D
+		+isAmbient() : bool {query}
+		-_intensity : double
+		+getAmbient() : double {query}
+		+illuminate(const Math::Point3D &, Math::Vector3D& direction, double& intensity) : void {query}
+	}
+
+	class FlatColor {
+		+FlatColor(const Color& color)
+		+FlatColor(double r, double g, double b)
+		+FlatColor(const FlatColor &)
+		+~FlatColor()
+		-_color : Color
+		+getColor() : Color {query}
+		+operator=(const FlatColor &) : FlatColor&
+	}
+
+	abstract class ILight {
+		+ILight()
+		+ILight(const ILight &)
+		+~ILight()
+		+operator=(const ILight &) : ILight&
+		+{abstract} isAmbient() : bool {query}
+		+{abstract} getAmbient() : double {query}
+		+{abstract} illuminate(const Math::Point3D& point, Math::Vector3D& direction, double& intensity) : void {query}
+	}
+
+	abstract class IMaterial {
+		+IMaterial()
+		+IMaterial(const IMaterial &)
+		+~IMaterial()
+		+{abstract} getColor() : Color {query}
+		+operator=(const IMaterial &) : IMaterial&
+	}
+
+	abstract class IPrimitive {
+		+IPrimitive()
+		+IPrimitive(const IPrimitive &)
+		+~IPrimitive()
+		+operator=(const IPrimitive &) : IPrimitive&
+		+{abstract} hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+	}
+
+	class LightFactory {
+		+LightFactory()
+		+LightFactory(const LightFactory &)
+		+~LightFactory()
+		+operator=(const LightFactory &) : LightFactory&
+		+knows(const std::string& name) : bool {query}
+		+create(const std::string& name, const libconfig::Setting& cfg) : std::unique_ptr<ILight> {query}
+		-_creators : std::unordered_map<std::string, Creator>
+		+registerType(const std::string& name, function<std::unique_ptr<ILight>( const libconfig::Setting& )> creator) : void
+	}
+
+	class Plane {
+		+Plane(const Math::Point3D& point, const Math::Vector3D& normal, std::shared_ptr<IMaterial> material)
+		+Plane()
+		+Plane(const Plane &)
+		+~Plane()
+		-_point : Math::Point3D
+		-_normal : Math::Vector3D
+		+operator=(const Plane &) : Plane&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class PrimitiveFactory {
+		+PrimitiveFactory()
+		+PrimitiveFactory(const PrimitiveFactory &)
+		+~PrimitiveFactory()
+		+operator=(const PrimitiveFactory &) : PrimitiveFactory&
+		+knows(const std::string& name) : bool {query}
+		+create(const std::string& name, const libconfig::Setting& cfg) : std::unique_ptr<IPrimitive> {query}
+		-_creators : std::unordered_map<std::string, Creator>
+		+registerType(const std::string& name, function<std::unique_ptr<IPrimitive>( const libconfig::Setting& )> creator) : void
+	}
+
+	class Ray {
+		+Ray(const Math::Point3D& origin, const Math::Vector3D& direction)
+		+~Ray()
+		+at(double t) : Math::Point3D {query}
+		+origin : Math::Point3D
+		+direction : Math::Vector3D
+	}
+
+	class Rectangle3D {
+		+Rectangle3D(const Math::Point3D& origin, const Math::Vector3D& bottom, const Math::Vector3D& left)
+		+origin : Math::Point3D
+		+pointAt(double u, double v) : Math::Point3D {query}
+		+bottom_side : Math::Vector3D
+		+left_side : Math::Vector3D
+	}
+
+	class Renderer {
+		+Renderer()
+		+Renderer(const Renderer &)
+		+~Renderer()
+		-traceRay(const Ray& ray, const Scene& scene) : Color {query}
+		+operator=(const Renderer &) : Renderer&
+		-{static} toChannel(double v) : int
+		+render(const Scene& scene, std::ostream& out) : void {query}
+	}
+
+	class Scene {
+		+Scene(const Camera& camera, int width, int height)
+		+Scene(Scene& &)
+		+~Scene()
+		-_camera : Camera
+		+getCamera() : Camera& {query}
+		+operator=(Scene& &) : Scene&
+		-_height : int
+		-_width : int
+		+getHeight() : int {query}
+		+getWidth() : int {query}
+		-_lights : std::vector<std::unique_ptr<ILight>>
+		+getLights() : std::vector<std::unique_ptr<ILight>>& {query}
+		-_primitives : std::vector<std::unique_ptr<IPrimitive>>
+		+getPrimitives() : std::vector<std::unique_ptr<IPrimitive>>& {query}
+		+addLight(std::unique_ptr<ILight> l) : void
+		+addPrimitive(std::unique_ptr<IPrimitive> p) : void
+	}
+
+	class SceneBuilder {
+		+SceneBuilder()
+		+SceneBuilder(SceneBuilder& &)
+		+~SceneBuilder()
+		+build() : Scene
+		+addLight(std::unique_ptr<ILight> l) : SceneBuilder&
+		+addPrimitive(std::unique_ptr<IPrimitive> p) : SceneBuilder&
+		+operator=(SceneBuilder& &) : SceneBuilder&
+		+setCamera(const Camera& camera, int width, int height) : SceneBuilder&
+		-_hasCamera : bool
+		-_height : int
+		-_width : int
+		-_camera : std::optional<Camera>
+		-_lights : std::vector<std::unique_ptr<ILight>>
+		-_primitives : std::vector<std::unique_ptr<IPrimitive>>
+	}
+
+	class Sphere {
+		+Sphere(const Math::Point3D& center, double radius, std::shared_ptr<IMaterial> material)
+		+Sphere(const Sphere &)
+		+~Sphere()
+		-_center : Math::Point3D
+		+operator=(const Sphere &) : Sphere&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_radius : double
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class Triangles {
+		+Triangles()
+		+Triangles(const Triangles &)
+		+Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, std::shared_ptr<IMaterial> material)
+		+~Triangles()
+		-_v0 : Math::Point3D
+		-_v1 : Math::Point3D
+		-_v2 : Math::Point3D
+		+operator=(const Triangles &) : Triangles&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class Color {
+		+Color()
+		+Color(double r, double g, double b)
+		+operator*(double s) : Color {query}
+		+operator*(const Color& o) : Color {query}
+		+operator+(const Color& o) : Color {query}
+		+operator+=(const Color& o) : Color&
+		+b : double
+		+g : double
+		+r : double
+	}
+
+	class HitRecord {
+		+t : double
+		+material : std::shared_ptr<IMaterial>
+	}
+}
+
+/' Inheritance relationships '/
+
+RayTracer.ILight <|-- RayTracer.AmbientLight
+
+
+RayTracer.ILight <|-- RayTracer.DirectionalLight
+
+
+RayTracer.IMaterial <|-- RayTracer.FlatColor
+
+
+RayTracer.IPrimitive <|-- RayTracer.Cylinder
+
+
+RayTracer.IPrimitive <|-- RayTracer.Plane
+
+
+RayTracer.IPrimitive <|-- RayTracer.Sphere
+
+
+RayTracer.IPrimitive <|-- RayTracer.Triangles
+
+
+/' Aggregation relationships '/
+
+RayTracer.Camera *-- RayTracer.Rectangle3D
+
+
+RayTracer.Cylinder o-- RayTracer.IMaterial
+
+
+RayTracer.FlatColor *-- RayTracer.Color
+
+
+RayTracer.HitRecord o-- RayTracer.IMaterial
+
+
+RayTracer.Plane o-- RayTracer.IMaterial
+
+
+RayTracer.Scene *-- RayTracer.Camera
+
+
+RayTracer.Scene o-- RayTracer.ILight
+
+
+RayTracer.Scene o-- RayTracer.IPrimitive
+
+
+RayTracer.SceneBuilder *-- RayTracer.Camera
+
+
+RayTracer.SceneBuilder o-- RayTracer.ILight
+
+
+RayTracer.SceneBuilder o-- RayTracer.IPrimitive
+
+
+RayTracer.Sphere o-- RayTracer.IMaterial
+
+
+RayTracer.Triangles o-- RayTracer.IMaterial
