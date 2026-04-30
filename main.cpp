@@ -8,18 +8,14 @@
 #include <iostream>
 #include "include/scene/ConfigParser.hpp"
 #include "include/core/Renderer.hpp"
+#include "include/Parser.hpp"
+#include "include/Help.hpp"
 
 int main(int argc, char* argv[])
 {
-    if (argc == 2 && std::string(argv[1]) == "--help") {
-        std::cerr << "USAGE: ./raytracer <SCENE_FILE>\n"
-                  << "  SCENE_FILE: libconfig++ scene configuration\n";
-        return 0;
-    }
-    if (argc != 2) {
-        std::cerr << "USAGE: ./raytracer <SCENE_FILE>\n";
-        return 84;
-    }
+    Parser parser(argc, argv);
+    if (parser.shouldDisplayHelp())
+        return Help::printHelp();
     try {
         RayTracer::ConfigParser parser;
         RayTracer::Scene scene = parser.parse(argv[1]);

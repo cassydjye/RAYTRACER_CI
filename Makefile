@@ -13,11 +13,14 @@ CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -Iinclude
 LDFLAGS  = -lconfig++
 
 SRC = main.cpp \
+      src/Help.cpp \
+      src/Parser.cpp \
       src/math/Point3D.cpp \
       src/math/Vector3D.cpp \
       src/core/Renderer.cpp \
       src/primitives/Sphere.cpp \
       src/primitives/Plane.cpp \
+      src/primitives/Cylinder.cpp \
       src/scene/ConfigParser.cpp \
       src/raytracer/Camera.cpp \
       src/raytracer/Rectangle3D.cpp
