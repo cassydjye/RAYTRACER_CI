@@ -59,6 +59,7 @@ namespace RayTracer {
 		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
 		-_height : double
 		-_radius : double
+		+boundingBox() : std::optional<AABB> {query}
 		-_material : std::shared_ptr<IMaterial>
 	}
 
@@ -115,6 +116,7 @@ namespace RayTracer {
 		+~IPrimitive()
 		+operator=(const IPrimitive &) : IPrimitive&
 		+{abstract} hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
 	}
 
 	class LightFactory {
@@ -128,6 +130,21 @@ namespace RayTracer {
 		+registerType(const std::string& name, function<std::unique_ptr<ILight>( const libconfig::Setting& )> creator) : void
 	}
 
+	class Mesh {
+		+Mesh(std::vector<Triangles> triangles)
+		+Mesh(Mesh& &)
+		+~Mesh()
+		+operator=(Mesh& &) : Mesh&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
+		-_bvh : std::unique_ptr<BVHNode>
+		-_triangles : std::vector<Triangles>
+	}
+
+	class ObjLoader {
+		+{static} load(const std::string& path, const Math::Point3D& position, std::shared_ptr<IMaterial> material) : Mesh
+	}
+
 	class Plane {
 		+Plane(const Math::Point3D& point, const Math::Vector3D& normal, std::shared_ptr<IMaterial> material)
 		+Plane()
@@ -138,6 +155,18 @@ namespace RayTracer {
 		+operator=(const Plane &) : Plane&
 		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
 		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class PointLight {
+		+PointLight(const Math::Point3D& position, double intensity)
+		+PointLight(const PointLight &)
+		+~PointLight()
+		-_position : Math::Point3D
+		+operator=(const PointLight &) : PointLight&
+		+isAmbient() : bool {query}
+		-_intensity : double
+		+getAmbient() : double {query}
+		+illuminate(const Math::Point3D& point, Math::Vector3D& direction, double& intensity) : void {query}
 	}
 
 	class PrimitiveFactory {
@@ -171,22 +200,24 @@ namespace RayTracer {
 		+Renderer()
 		+Renderer(const Renderer &)
 		+~Renderer()
-		-traceRay(const Ray& ray, const Scene& scene) : Color {query}
+		-traceRay(const Ray& ray, const Scene& scene, const BVHNode* bvh, const std::vector<const IPrimitive*>& unbounded) : Color {query}
 		+operator=(const Renderer &) : Renderer&
 		-{static} toChannel(double v) : int
 		+render(const Scene& scene, std::ostream& out) : void {query}
 	}
 
 	class Scene {
-		+Scene(const Camera& camera, int width, int height)
+		+Scene(const Camera& camera, int width, int height, int samples)
 		+Scene(Scene& &)
 		+~Scene()
 		-_camera : Camera
 		+getCamera() : Camera& {query}
 		+operator=(Scene& &) : Scene&
 		-_height : int
+		-_samples : int
 		-_width : int
 		+getHeight() : int {query}
+		+getSamples() : int {query}
 		+getWidth() : int {query}
 		-_lights : std::vector<std::unique_ptr<ILight>>
 		+getLights() : std::vector<std::unique_ptr<ILight>>& {query}
@@ -204,9 +235,10 @@ namespace RayTracer {
 		+addLight(std::unique_ptr<ILight> l) : SceneBuilder&
 		+addPrimitive(std::unique_ptr<IPrimitive> p) : SceneBuilder&
 		+operator=(SceneBuilder& &) : SceneBuilder&
-		+setCamera(const Camera& camera, int width, int height) : SceneBuilder&
+		+setCamera(const Camera& camera, int width, int height, int samples) : SceneBuilder&
 		-_hasCamera : bool
 		-_height : int
+		-_samples : int
 		-_width : int
 		-_camera : std::optional<Camera>
 		-_lights : std::vector<std::unique_ptr<ILight>>
@@ -221,6 +253,7 @@ namespace RayTracer {
 		+operator=(const Sphere &) : Sphere&
 		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
 		-_radius : double
+		+boundingBox() : std::optional<AABB> {query}
 		-_material : std::shared_ptr<IMaterial>
 	}
 
@@ -231,20 +264,45 @@ namespace RayTracer {
 		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
 		-_R : std::array<double, 9>
 		-_Rt : std::array<double, 9>
+		+boundingBox() : std::optional<AABB> {query}
 		-_inner : std::unique_ptr<IPrimitive>
 	}
 
 	class Triangles {
-		+Triangles()
 		+Triangles(const Triangles &)
 		+Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, std::shared_ptr<IMaterial> material)
+		+Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, const Math::Vector3D& n0, const Math::Vector3D& n1, const Math::Vector3D& n2, std::shared_ptr<IMaterial> material)
 		+~Triangles()
 		-_v0 : Math::Point3D
 		-_v1 : Math::Point3D
 		-_v2 : Math::Point3D
+		-_n0 : Math::Vector3D
+		-_n1 : Math::Vector3D
+		-_n2 : Math::Vector3D
 		+operator=(const Triangles &) : Triangles&
+		-_hasVertexNormals : bool
 		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
 		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class AABB {
+		+AABB(const Math::Point3D& mn, const Math::Point3D& mx)
+		+{static} merge(const AABB& a, const AABB& b) : AABB
+		+centroid() : Math::Point3D {query}
+		+max : Math::Point3D
+		+min : Math::Point3D
+		+hit(const Ray& ray, double tMin, double tMax) : bool {query}
+	}
+
+	class BVHNode {
+		+box : AABB
+		+hit(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+hitAny(const Ray& ray, double tMin, double tMax) : bool {query}
+		+prim : const IPrimitive*
+		+{static} build(std::vector<const IPrimitive*>& prims, size_t start, size_t end) : std::unique_ptr<BVHNode>
+		+left : std::unique_ptr<BVHNode>
+		+right : std::unique_ptr<BVHNode>
 	}
 
 	class Color {
@@ -253,6 +311,7 @@ namespace RayTracer {
 		+operator*(double s) : Color {query}
 		+operator*(const Color& o) : Color {query}
 		+operator+(const Color& o) : Color {query}
+		+operator/(double s) : Color {query}
 		+operator+=(const Color& o) : Color&
 		+b : double
 		+g : double
@@ -306,10 +365,16 @@ RayTracer.ILight <|-- RayTracer.AmbientLight
 RayTracer.ILight <|-- RayTracer.DirectionalLight
 
 
+RayTracer.ILight <|-- RayTracer.PointLight
+
+
 RayTracer.IMaterial <|-- RayTracer.FlatColor
 
 
 RayTracer.IPrimitive <|-- RayTracer.Cylinder
+
+
+RayTracer.IPrimitive <|-- RayTracer.Mesh
 
 
 RayTracer.IPrimitive <|-- RayTracer.Plane
@@ -329,6 +394,15 @@ RayTracer.IPrimitive <|-- RayTracer.Triangles
 
 /' Aggregation relationships '/
 
+RayTracer.BVHNode *-- RayTracer.AABB
+
+
+RayTracer.BVHNode "2" o-- RayTracer.BVHNode
+
+
+RayTracer.BVHNode o-- RayTracer.IPrimitive
+
+
 RayTracer.Camera *-- RayTracer.Rectangle3D
 
 
@@ -339,6 +413,12 @@ RayTracer.FlatColor *-- RayTracer.Color
 
 
 RayTracer.HitRecord o-- RayTracer.IMaterial
+
+
+RayTracer.Mesh o-- RayTracer.BVHNode
+
+
+RayTracer.Mesh *-- RayTracer.Triangles
 
 
 RayTracer.Plane o-- RayTracer.IMaterial
