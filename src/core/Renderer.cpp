@@ -8,6 +8,7 @@
 #include "../../include/core/Renderer.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include "../../include/raytracer/Ray.hpp"
 #include "../../include/interfaces/IMaterial.hpp"
@@ -47,7 +48,12 @@ RayTracer::Color RayTracer::Renderer::traceRay(const Ray& ray, const Scene& scen
         );
     }
 
-    Color baseColor = closest.material->getColor();
+    Color  baseColor = closest.material->getColor();
+    double ks        = closest.material->getSpecular();
+    double shininess = closest.material->getShininess();
+
+    // View direction: from hit point toward camera (opposite of ray direction).
+    Math::Vector3D viewDir = ray.direction.normalize() * -1.0;
 
     // Accumulate ambient from all ambient lights.
     double ambientSum = 0.0;
@@ -56,20 +62,47 @@ RayTracer::Color RayTracer::Renderer::traceRay(const Ray& ray, const Scene& scen
             ambientSum += light->getAmbient();
     }
 
-    // Accumulate diffuse (Lambertian) from all directional lights.
-    double diffuseSum = 0.0;
+    // Accumulate diffuse + specular from all directional lights.
+    double diffuseSum  = 0.0;
+    Color  specularSum(0.0, 0.0, 0.0);
     for (const auto& light : scene.getLights()) {
         if (light->isAmbient())
             continue;
         Math::Vector3D toLight{0.0, 0.0, 0.0};
         double intensity = 0.0;
         light->illuminate(closest.point, toLight, intensity);
+
+        Ray shadowRay(closest.point, toLight);
+        bool inShadow = false;
+        for (const auto& prim : scene.getPrimitives()) {
+            HitRecord shadowHit;
+            if (prim->hits(shadowRay, 0.001, std::numeric_limits<double>::infinity(), shadowHit)) {
+                inShadow = true;
+                break;
+            }
+        }
+        if (inShadow)
+            continue;
+
         double diffuse = std::max(0.0, closest.normal.dot(toLight));
         diffuseSum += diffuse * intensity;
+
+        // Phong specular: reflect toLight around normal, dot with viewDir.
+        if (ks > 0.0) {
+            Math::Vector3D refl = closest.normal * (2.0 * closest.normal.dot(toLight)) - toLight;
+            double spec = std::pow(std::max(0.0, refl.dot(viewDir)), shininess);
+            specularSum += Color(1.0, 1.0, 1.0) * (ks * spec * intensity);
+        }
     }
 
     double totalIntensity = std::min(1.0, ambientSum + diffuseSum);
-    return baseColor * totalIntensity;
+
+    double distance = closest.t * ray.direction.length();
+    double fogFactor = std::exp(-0.02 * distance);
+    const double fogMin = 0.40; // Minimum intensity at infinite distance (controls fog density).
+    double fadedIntensity = fogMin + (totalIntensity - fogMin) * fogFactor;
+
+    return baseColor * fadedIntensity + specularSum;
 }
 
 // ── render loop ──────────────────────────────────────────────────────────────
