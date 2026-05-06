@@ -21,8 +21,8 @@ namespace RayTracer {
     // Non-copyable because unique_ptr members can't be copied.
     class Scene {
     public:
-        Scene(const Camera& camera, int width, int height)
-            : _camera(camera), _width(width), _height(height) {}
+        Scene(const Camera& camera, int width, int height, int samples = 1)
+            : _camera(camera), _width(width), _height(height), _samples(samples) {}
         ~Scene() = default;
         Scene(const Scene&) = delete;
         Scene& operator=(const Scene&) = delete;
@@ -35,6 +35,7 @@ namespace RayTracer {
         const Camera& getCamera() const { return _camera; }
         int getWidth() const { return _width; }
         int getHeight() const { return _height; }
+        int getSamples() const { return _samples; }
         const std::vector<std::unique_ptr<IPrimitive>>& getPrimitives() const { return _primitives; }
         const std::vector<std::unique_ptr<ILight>>& getLights() const { return _lights; }
 
@@ -42,6 +43,7 @@ namespace RayTracer {
         Camera _camera;
         int _width;
         int _height;
+        int _samples;
         std::vector<std::unique_ptr<IPrimitive>> _primitives;
         std::vector<std::unique_ptr<ILight>> _lights;
     };

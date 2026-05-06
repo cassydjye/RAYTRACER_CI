@@ -40,6 +40,18 @@ namespace RayTracer {
 
             bool hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const override;
 
+            std::optional<AABB> boundingBox() const override {
+                const double e = 1e-4;
+                return AABB(
+                    Math::Point3D(std::min({_v0.x, _v1.x, _v2.x}) - e,
+                                  std::min({_v0.y, _v1.y, _v2.y}) - e,
+                                  std::min({_v0.z, _v1.z, _v2.z}) - e),
+                    Math::Point3D(std::max({_v0.x, _v1.x, _v2.x}) + e,
+                                  std::max({_v0.y, _v1.y, _v2.y}) + e,
+                                  std::max({_v0.z, _v1.z, _v2.z}) + e)
+                );
+            }
+
         private:
             Math::Point3D  _v0, _v1, _v2;
             std::shared_ptr<IMaterial> _material;

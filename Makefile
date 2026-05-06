@@ -23,6 +23,7 @@ SRC = main.cpp \
       src/primitives/Cylinder.cpp \
       src/primitives/Triangles.cpp \
       src/primitives/Transform.cpp \
+      src/primitives/BVHNode.cpp \
      src/primitives/Mesh.cpp \
       src/scene/ObjLoader.cpp \
       src/scene/ConfigParser.cpp \
