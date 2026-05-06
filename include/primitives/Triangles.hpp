@@ -5,6 +5,8 @@
 ** Triangles
 */
 
+#include <algorithm>
+#include <initializer_list>
 #include "../../include/interfaces/IPrimitive.hpp"
 #include "../../include/materials/FlatColor.hpp"
 #include "../../include/interfaces/IMaterial.hpp"

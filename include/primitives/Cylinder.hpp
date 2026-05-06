@@ -5,6 +5,7 @@
 ** Cylinder
 */
 
+#include <algorithm>
 #include "../../include/interfaces/IPrimitive.hpp"
 #include "../../include/interfaces/IMaterial.hpp"
 #include "../../include/math/Point3D.hpp"
