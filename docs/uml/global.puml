@@ -77,11 +77,16 @@ namespace RayTracer {
 	class FlatColor {
 		+FlatColor(const Color& color)
 		+FlatColor(double r, double g, double b)
+		+FlatColor(double r, double g, double b, double specular, double shininess)
 		+FlatColor(const FlatColor &)
 		+~FlatColor()
 		-_color : Color
 		+getColor() : Color {query}
 		+operator=(const FlatColor &) : FlatColor&
+		-_shininess : double
+		-_specular : double
+		+getShininess() : double {query}
+		+getSpecular() : double {query}
 	}
 
 	abstract class ILight {
@@ -100,6 +105,8 @@ namespace RayTracer {
 		+~IMaterial()
 		+{abstract} getColor() : Color {query}
 		+operator=(const IMaterial &) : IMaterial&
+		+getShininess() : double {query}
+		+getSpecular() : double {query}
 	}
 
 	abstract class IPrimitive {
@@ -217,6 +224,16 @@ namespace RayTracer {
 		-_material : std::shared_ptr<IMaterial>
 	}
 
+	class Transform {
+		+Transform(std::unique_ptr<IPrimitive> inner, const Math::Point3D& pivot, double rx, double ry, double rz)
+		-_pivot : Math::Point3D
+		-{static} applyMatrix(const std::array<double, 9>& m, const Math::Vector3D& v) : Math::Vector3D
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_R : std::array<double, 9>
+		-_Rt : std::array<double, 9>
+		-_inner : std::unique_ptr<IPrimitive>
+	}
+
 	class Triangles {
 		+Triangles()
 		+Triangles(const Triangles &)
@@ -301,6 +318,9 @@ RayTracer.IPrimitive <|-- RayTracer.Plane
 RayTracer.IPrimitive <|-- RayTracer.Sphere
 
 
+RayTracer.IPrimitive <|-- RayTracer.Transform
+
+
 RayTracer.IPrimitive <|-- RayTracer.Triangles
 
 
@@ -343,6 +363,9 @@ RayTracer.SceneBuilder o-- RayTracer.IPrimitive
 
 
 RayTracer.Sphere o-- RayTracer.IMaterial
+
+
+RayTracer.Transform o-- RayTracer.IPrimitive
 
 
 RayTracer.Triangles o-- RayTracer.IMaterial
