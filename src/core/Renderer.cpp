@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <vector>
 #include "../../include/raytracer/Ray.hpp"
 #include "../../include/interfaces/IMaterial.hpp"
 
@@ -113,18 +114,20 @@ void RayTracer::Renderer::render(const Scene& scene, std::ostream& out) const
     int h = scene.getHeight();
     const Camera& cam = scene.getCamera();
 
-    out << "P3\n" << w << " " << h << "\n255\n";
+    // Render into a flat buffer so threads write independent rows without races.
+    std::vector<Color> buffer(static_cast<size_t>(w * h));
 
-    // Rows from top (y = h-1) to bottom (y = 0) so PPM row 0 = image top.
+    #pragma omp parallel for schedule(dynamic)
     for (int y = h - 1; y >= 0; --y) {
         for (int x = 0; x < w; ++x) {
             double u = static_cast<double>(x) / (w - 1);
             double v = static_cast<double>(y) / (h - 1);
             Ray r = cam.ray(u, v);
-            Color c = traceRay(r, scene);
-            out << toChannel(c.r) << " "
-                << toChannel(c.g) << " "
-                << toChannel(c.b) << "\n";
+            buffer[static_cast<size_t>((h - 1 - y) * w + x)] = traceRay(r, scene);
         }
     }
+
+    out << "P3\n" << w << " " << h << "\n255\n";
+    for (const Color& c : buffer)
+        out << toChannel(c.r) << " " << toChannel(c.g) << " " << toChannel(c.b) << "\n";
 }
