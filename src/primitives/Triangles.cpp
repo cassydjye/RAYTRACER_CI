@@ -6,8 +6,13 @@
 */
 
 #include "../../include/primitives/Triangles.hpp"
+#include "../../include/materials/FlatColor.hpp"
 #include <memory>
 #include <cmath>
+
+static const double EDGE_WIDTH = 0;
+static const std::shared_ptr<RayTracer::IMaterial> BLACK_EDGE =
+    std::make_shared<RayTracer::FlatColor>(0.0, 0.0, 0.0);
 
 bool RayTracer::Triangles::hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const
 {
@@ -47,8 +52,13 @@ bool RayTracer::Triangles::hits(const Ray& ray, double tMin, double tMax, HitRec
     Math::Vector3D normal(edge1.y * edge2.z - edge1.z * edge2.y,
                           edge1.z * edge2.x - edge1.x * edge2.z,
                           edge1.x * edge2.y - edge1.y * edge2.x);
-    rec.normal = normal.normalize();
-    rec.material = _material;
+    Math::Vector3D n = normal.normalize();
+    if (n.dot(ray.direction) > 0.0)
+        n = Math::Vector3D(-n.x, -n.y, -n.z);
+    rec.normal = n;
+    double w = 1.0 - u - v;
+    bool onEdge = (u < EDGE_WIDTH || v < EDGE_WIDTH || w < EDGE_WIDTH);
+    rec.material = onEdge ? BLACK_EDGE : _material;
 
     return true;
 }

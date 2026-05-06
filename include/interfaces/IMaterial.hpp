@@ -23,6 +23,12 @@ namespace RayTracer {
 
         // Returns the intrinsic colour of the surface at the current hit point.
         virtual Color getColor() const = 0;
+
+        // Phong specular coefficient [0, 1]. Default: no specular.
+        virtual double getSpecular() const { return 0.0; }
+
+        // Phong shininess exponent. Higher = tighter highlight.
+        virtual double getShininess() const { return 32.0; }
     };
 
 }

@@ -24,6 +24,7 @@
 #include "../../include/primitives/Plane.hpp"
 #include "../../include/primitives/Cylinder.hpp"
 #include "../../include/primitives/Triangles.hpp"
+#include "../../include/primitives/Transform.hpp"
 #include "../../include/light/AmbientLight.hpp"
 #include "../../include/light/DirectionalLight.hpp"
 #include "../../include/materials/FlatColor.hpp"
@@ -39,6 +40,34 @@ static double asDouble(const libconfig::Setting& s)
     throw std::runtime_error(std::string("expected a number at: ") + s.getPath());
 }
 
+// ── rotation wrap helper ─────────────────────────────────────────────────────
+
+static std::unique_ptr<RayTracer::IPrimitive>
+wrapRotation(std::unique_ptr<RayTracer::IPrimitive> prim,
+             const libconfig::Setting& s,
+             const Math::Point3D& pivot)
+{
+    if (!s.exists("rotation"))
+        return prim;
+    const double deg = M_PI / 180.0;
+    double rx = s["rotation"].exists("x") ? asDouble(s["rotation"]["x"]) * deg : 0.0;
+    double ry = s["rotation"].exists("y") ? asDouble(s["rotation"]["y"]) * deg : 0.0;
+    double rz = s["rotation"].exists("z") ? asDouble(s["rotation"]["z"]) * deg : 0.0;
+    return std::make_unique<RayTracer::Transform>(std::move(prim), pivot, rx, ry, rz);
+}
+
+// ── material helper ───────────────────────────────────────────────────────────
+
+static std::shared_ptr<RayTracer::FlatColor> makeMaterial(const libconfig::Setting& s)
+{
+    double cr = asDouble(s["color"]["r"]) / 255.0;
+    double cg = asDouble(s["color"]["g"]) / 255.0;
+    double cb = asDouble(s["color"]["b"]) / 255.0;
+    double ks       = s.exists("specular")  ? asDouble(s["specular"])  : 0.0;
+    double shininess = s.exists("shininess") ? asDouble(s["shininess"]) : 32.0;
+    return std::make_shared<RayTracer::FlatColor>(cr, cg, cb, ks, shininess);
+}
+
 // ── factory registration ──────────────────────────────────────────────────────
 
 static RayTracer::PrimitiveFactory makePrimitiveFactory()
@@ -46,75 +75,45 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
     RayTracer::PrimitiveFactory f;
 
     f.registerType("sphere", [](const libconfig::Setting& s) {
-        double x = asDouble(s["x"]);
-        double y = asDouble(s["y"]);
-        double z = asDouble(s["z"]);
+        double x = asDouble(s["x"]), y = asDouble(s["y"]), z = asDouble(s["z"]);
         double r = asDouble(s["r"]);
-        // Colors in the config are in [0, 255]; normalize to [0, 1].
-        double cr = asDouble(s["color"]["r"]) / 255.0;
-        double cg = asDouble(s["color"]["g"]) / 255.0;
-        double cb = asDouble(s["color"]["b"]) / 255.0;
-        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
-        return std::make_unique<RayTracer::Sphere>(Math::Point3D(x, y, z), r, mat);
+        auto mat = makeMaterial(s);
+        Math::Point3D center(x, y, z);
+        auto prim = std::make_unique<RayTracer::Sphere>(center, r, mat);
+        return wrapRotation(std::move(prim), s, center);
     });
 
     f.registerType("plane", [](const libconfig::Setting& s) {
-        double x = asDouble(s["x"]);
-        double y = asDouble(s["y"]);
-        double z = asDouble(s["z"]);
-        double nx = asDouble(s["nx"]);
-        double ny = asDouble(s["ny"]);
-        double nz = asDouble(s["nz"]);
-        // Colors in the config are in [0, 255]; normalize to [0, 1].
-        double cr = asDouble(s["color"]["r"]) / 255.0;
-        double cg = asDouble(s["color"]["g"]) / 255.0;
-        double cb = asDouble(s["color"]["b"]) / 255.0;
-        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
-        return std::make_unique<RayTracer::Plane>(
-            Math::Point3D(x, y, z), Math::Vector3D(nx, ny, nz), mat
-        );
+        double x = asDouble(s["x"]), y = asDouble(s["y"]), z = asDouble(s["z"]);
+        double nx = asDouble(s["nx"]), ny = asDouble(s["ny"]), nz = asDouble(s["nz"]);
+        auto mat = makeMaterial(s);
+        Math::Point3D point(x, y, z);
+        auto prim = std::make_unique<RayTracer::Plane>(point, Math::Vector3D(nx, ny, nz), mat);
+        return wrapRotation(std::move(prim), s, point);
     });
 
     f.registerType("cylinder", [](const libconfig::Setting& s) {
-        double x = asDouble(s["x"]);
-        double y = asDouble(s["y"]);
-        double z = asDouble(s["z"]);
-        double ax = asDouble(s["ax"]);
-        double ay = asDouble(s["ay"]);
-        double az = asDouble(s["az"]);
-        double r = asDouble(s["r"]);
-        double h = asDouble(s["h"]);
-        // Colors in the config are in [0, 255]; normalize to [0, 1].
-        double cr = asDouble(s["color"]["r"]) / 255.0;
-        double cg = asDouble(s["color"]["g"]) / 255.0;
-        double cb = asDouble(s["color"]["b"]) / 255.0;
-        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
-        return std::make_unique<RayTracer::Cylinder>(
-            Math::Point3D(x, y, z), Math::Vector3D(ax, ay, az), r, h, mat
-        );
+        double x = asDouble(s["x"]), y = asDouble(s["y"]), z = asDouble(s["z"]);
+        double ax = asDouble(s["ax"]), ay = asDouble(s["ay"]), az = asDouble(s["az"]);
+        double r = asDouble(s["r"]), h = asDouble(s["h"]);
+        auto mat = makeMaterial(s);
+        Math::Point3D base(x, y, z);
+        auto prim = std::make_unique<RayTracer::Cylinder>(base, Math::Vector3D(ax, ay, az), r, h, mat);
+        return wrapRotation(std::move(prim), s, base);
     });
 
     f.registerType("triangle", [](const libconfig::Setting& s) {
-        double v0x = asDouble(s["v0"]["x"]);
-        double v0y = asDouble(s["v0"]["y"]);
-        double v0z = asDouble(s["v0"]["z"]);
-        double v1x = asDouble(s["v1"]["x"]);
-        double v1y = asDouble(s["v1"]["y"]);
-        double v1z = asDouble(s["v1"]["z"]);
-        double v2x = asDouble(s["v2"]["x"]);
-        double v2y = asDouble(s["v2"]["y"]);
-        double v2z = asDouble(s["v2"]["z"]);
-        // Colors in the config are in [0, 255]; normalize to [0, 1].
-        double cr = asDouble(s["color"]["r"]) / 255.0;
-        double cg = asDouble(s["color"]["g"]) / 255.0;
-        double cb = asDouble(s["color"]["b"]) / 255.0;
-        auto mat = std::make_shared<RayTracer::FlatColor>(cr, cg, cb);
-        return std::make_unique<RayTracer::Triangles>(
-            Math::Point3D(v0x, v0y, v0z),
-            Math::Point3D(v1x, v1y, v1z),
-            Math::Point3D(v2x, v2y, v2z),
-            mat
+        Math::Point3D v0(asDouble(s["v0"]["x"]), asDouble(s["v0"]["y"]), asDouble(s["v0"]["z"]));
+        Math::Point3D v1(asDouble(s["v1"]["x"]), asDouble(s["v1"]["y"]), asDouble(s["v1"]["z"]));
+        Math::Point3D v2(asDouble(s["v2"]["x"]), asDouble(s["v2"]["y"]), asDouble(s["v2"]["z"]));
+        auto mat = makeMaterial(s);
+        auto prim = std::make_unique<RayTracer::Triangles>(v0, v1, v2, mat);
+        Math::Point3D centroid(
+            (v0.x + v1.x + v2.x) / 3.0,
+            (v0.y + v1.y + v2.y) / 3.0,
+            (v0.z + v1.z + v2.z) / 3.0
         );
+        return wrapRotation(std::move(prim), s, centroid);
     });
 
     return f;
@@ -159,10 +158,38 @@ parseCamera(const libconfig::Setting& cam)
     double halfH    = std::tan((fov * M_PI / 180.0) / 2.0);
     double halfW    = aspect * halfH;
 
+    double rx = 0.0, ry = 0.0, rz = 0.0;
+    if (cam.exists("rotation")) {
+        const double deg = M_PI / 180.0;
+        if (cam["rotation"].exists("x")) rx = asDouble(cam["rotation"]["x"]) * deg;
+        if (cam["rotation"].exists("y")) ry = asDouble(cam["rotation"]["y"]) * deg;
+        if (cam["rotation"].exists("z")) rz = asDouble(cam["rotation"]["z"]) * deg;
+    }
+
+    // Build R = Rz * Ry * Rx (same convention as Transform).
+    double cx = std::cos(rx), sx = std::sin(rx);
+    double cy = std::cos(ry), sy = std::sin(ry);
+    double cz = std::cos(rz), sz = std::sin(rz);
+    auto rot = [&](double vx, double vy, double vz) -> Math::Vector3D {
+        double ox =  cy*cz*vx + (cz*sx*sy - cx*sz)*vy + (cx*cz*sy + sx*sz)*vz;
+        double oy =  cy*sz*vx + (cx*cz + sx*sy*sz)*vy + (cx*sy*sz - cz*sx)*vz;
+        double oz = -sy*vx    +  cy*sx*vy              +  cx*cy*vz;
+        return Math::Vector3D(ox, oy, oz);
+    };
+
+    // Rotate the canonical screen basis vectors.
+    Math::Vector3D forward = rot(0.0, 0.0, -1.0);
+    Math::Vector3D right   = rot(halfW, 0.0, 0.0);
+    Math::Vector3D up      = rot(0.0, halfH, 0.0);
+
     Math::Point3D  origin(px, py, pz);
-    Math::Point3D  screenOrigin(px - halfW, py - halfH, pz - 1.0);
-    Math::Vector3D bottomSide(2.0 * halfW, 0.0, 0.0);
-    Math::Vector3D leftSide(0.0, 2.0 * halfH, 0.0);
+    Math::Point3D  screenOrigin(
+        px + forward.x - right.x - up.x,
+        py + forward.y - right.y - up.y,
+        pz + forward.z - right.z - up.z
+    );
+    Math::Vector3D bottomSide(2.0 * right.x, 2.0 * right.y, 2.0 * right.z);
+    Math::Vector3D leftSide(2.0 * up.x, 2.0 * up.y, 2.0 * up.z);
 
     RayTracer::Rectangle3D screen(screenOrigin, bottomSide, leftSide);
     return {RayTracer::Camera(origin, screen), {width, height}};
