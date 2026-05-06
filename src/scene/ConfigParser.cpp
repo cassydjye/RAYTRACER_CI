@@ -29,6 +29,7 @@
 #include "../../include/scene/ObjLoader.hpp"
 #include "../../include/light/AmbientLight.hpp"
 #include "../../include/light/DirectionalLight.hpp"
+#include "../../include/light/PointLight.hpp"
 #include "../../include/materials/FlatColor.hpp"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -177,6 +178,16 @@ static RayTracer::LightFactory makeLightFactory()
         );
     });
 
+    f.registerType("point", [](const libconfig::Setting& s) {
+        double px = asDouble(s["x"]);
+        double py = asDouble(s["y"]);
+        double pz = asDouble(s["z"]);
+        double intensity = s.exists("intensity") ? asDouble(s["intensity"]) : 1.0;
+        return std::make_unique<RayTracer::PointLight>(
+            Math::Point3D(px, py, pz), intensity
+        );
+    });
+
     return f;
 }
 
@@ -287,6 +298,12 @@ static void parseLights(const libconfig::Setting& lights,
             }
         }
     }
+
+    if (lights.exists("point")) {
+        const libconfig::Setting& pts = lights["point"];
+        for (int i = 0; i < pts.getLength(); ++i)
+            builder.addLight(factory.create("point", pts[i]));
+    }
 }
 
 // ── public entry point ───────────────────────────────────────────────────────
@@ -312,7 +329,10 @@ RayTracer::Scene RayTracer::ConfigParser::parse(const std::string& filename) con
 
     try {
         auto [camera, res] = parseCamera(cfg.lookup("camera"));
-        builder.setCamera(camera, res.first, res.second);
+        int samples = 1;
+        if (cfg.lookup("camera").exists("samples"))
+            samples = static_cast<int>(cfg.lookup("camera")["samples"]);
+        builder.setCamera(camera, res.first, res.second, samples);
 
         if (cfg.exists("primitives"))
             parsePrimitives(cfg.lookup("primitives"), builder, primFactory);

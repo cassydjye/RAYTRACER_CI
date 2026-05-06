@@ -82,9 +82,11 @@ RayTracer::Mesh RayTracer::ObjLoader::load(const std::string& path,
 
     if (!useFileNormals) {
         smoothNormals.assign(vertices.size(), Math::Vector3D(0, 0, 0));
+        auto svValid = [&](int i) { return i >= 0 && static_cast<size_t>(i) < vertices.size(); };
         for (const auto& face : faces) {
             for (size_t i = 1; i + 1 < face.fvs.size(); ++i) {
                 int a = face.fvs[0].v, b = face.fvs[i].v, c = face.fvs[i + 1].v;
+                if (!svValid(a) || !svValid(b) || !svValid(c)) continue;
                 Math::Vector3D e1 = vertices[b] - vertices[a];
                 Math::Vector3D e2 = vertices[c] - vertices[a];
                 Math::Vector3D geom(e1.y*e2.z - e1.z*e2.y,
@@ -102,6 +104,9 @@ RayTracer::Mesh RayTracer::ObjLoader::load(const std::string& path,
     }
 
     // Build triangles.
+    auto vValid  = [&](int i) { return i >= 0 && static_cast<size_t>(i) < vertices.size(); };
+    auto vnValid = [&](int i) { return i >= 0 && static_cast<size_t>(i) < vnormals.size(); };
+
     std::vector<Triangles> triangles;
     for (const auto& face : faces) {
         for (size_t i = 1; i + 1 < face.fvs.size(); ++i) {
@@ -109,7 +114,10 @@ RayTracer::Mesh RayTracer::ObjLoader::load(const std::string& path,
             const FaceVertex& fv1 = face.fvs[i];
             const FaceVertex& fv2 = face.fvs[i + 1];
 
-            if (useFileNormals && fv0.vn >= 0 && fv1.vn >= 0 && fv2.vn >= 0) {
+            if (!vValid(fv0.v) || !vValid(fv1.v) || !vValid(fv2.v))
+                continue;
+
+            if (useFileNormals && vnValid(fv0.vn) && vnValid(fv1.vn) && vnValid(fv2.vn)) {
                 triangles.emplace_back(
                     vertices[fv0.v], vertices[fv1.v], vertices[fv2.v],
                     vnormals[fv0.vn], vnormals[fv1.vn], vnormals[fv2.vn],

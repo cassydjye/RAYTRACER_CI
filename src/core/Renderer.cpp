@@ -10,9 +10,11 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <random>
 #include <vector>
 #include "../../include/raytracer/Ray.hpp"
 #include "../../include/interfaces/IMaterial.hpp"
+#include "../../include/primitives/BVHNode.hpp"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,18 +25,30 @@ int RayTracer::Renderer::toChannel(double v)
 
 // ── ray colour ───────────────────────────────────────────────────────────────
 
-RayTracer::Color RayTracer::Renderer::traceRay(const Ray& ray, const Scene& scene) const
+RayTracer::Color RayTracer::Renderer::traceRay(
+    const Ray& ray, const Scene& scene,
+    const BVHNode* bvh,
+    const std::vector<const IPrimitive*>& unbounded) const
 {
     HitRecord closest;
     double tMax = std::numeric_limits<double>::infinity();
     bool anyHit = false;
 
-    // Find the closest primitive hit along this ray.
-    for (const auto& prim : scene.getPrimitives()) {
+    // BVH traversal for bounded primitives.
+    if (bvh) {
+        HitRecord rec;
+        if (bvh->hit(ray, 0.001, tMax, rec)) {
+            anyHit  = true;
+            tMax    = rec.t;
+            closest = rec;
+        }
+    }
+    // Linear scan for unbounded primitives (planes, etc.).
+    for (const IPrimitive* prim : unbounded) {
         HitRecord rec;
         if (prim->hits(ray, 0.001, tMax, rec)) {
-            anyHit = true;
-            tMax   = rec.t;
+            anyHit  = true;
+            tMax    = rec.t;
             closest = rec;
         }
     }
@@ -75,11 +89,15 @@ RayTracer::Color RayTracer::Renderer::traceRay(const Ray& ray, const Scene& scen
 
         Ray shadowRay(closest.point, toLight);
         bool inShadow = false;
-        for (const auto& prim : scene.getPrimitives()) {
-            HitRecord shadowHit;
-            if (prim->hits(shadowRay, 0.001, std::numeric_limits<double>::infinity(), shadowHit)) {
-                inShadow = true;
-                break;
+        if (bvh && bvh->hitAny(shadowRay, 0.001, std::numeric_limits<double>::infinity()))
+            inShadow = true;
+        if (!inShadow) {
+            for (const IPrimitive* prim : unbounded) {
+                HitRecord shadowHit;
+                if (prim->hits(shadowRay, 0.001, std::numeric_limits<double>::infinity(), shadowHit)) {
+                    inShadow = true;
+                    break;
+                }
             }
         }
         if (inShadow)
@@ -110,20 +128,41 @@ RayTracer::Color RayTracer::Renderer::traceRay(const Ray& ray, const Scene& scen
 
 void RayTracer::Renderer::render(const Scene& scene, std::ostream& out) const
 {
-    int w = scene.getWidth();
-    int h = scene.getHeight();
+    int w       = scene.getWidth();
+    int h       = scene.getHeight();
+    int samples = scene.getSamples();
     const Camera& cam = scene.getCamera();
+
+    // Split primitives: bounded ones go into the BVH, infinite ones stay linear.
+    std::vector<const IPrimitive*> bounded, unbounded;
+    for (const auto& p : scene.getPrimitives()) {
+        if (p->boundingBox().has_value())
+            bounded.push_back(p.get());
+        else
+            unbounded.push_back(p.get());
+    }
+    std::unique_ptr<BVHNode> bvhRoot;
+    if (!bounded.empty())
+        bvhRoot = BVHNode::build(bounded, 0, bounded.size());
+    const BVHNode* bvh = bvhRoot.get();
 
     // Render into a flat buffer so threads write independent rows without races.
     std::vector<Color> buffer(static_cast<size_t>(w * h));
 
     #pragma omp parallel for schedule(dynamic)
     for (int y = h - 1; y >= 0; --y) {
+        // Each thread gets its own RNG seeded by row to avoid contention.
+        std::mt19937 rng(static_cast<unsigned>(y * 1000003));
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+
         for (int x = 0; x < w; ++x) {
-            double u = static_cast<double>(x) / (w - 1);
-            double v = static_cast<double>(y) / (h - 1);
-            Ray r = cam.ray(u, v);
-            buffer[static_cast<size_t>((h - 1 - y) * w + x)] = traceRay(r, scene);
+            Color accum(0.0, 0.0, 0.0);
+            for (int s = 0; s < samples; ++s) {
+                double u = (x + (samples > 1 ? dist(rng) : 0.5)) / (w - 1);
+                double v = (y + (samples > 1 ? dist(rng) : 0.5)) / (h - 1);
+                accum += traceRay(cam.ray(u, v), scene, bvh, unbounded);
+            }
+            buffer[static_cast<size_t>((h - 1 - y) * w + x)] = accum / static_cast<double>(samples);
         }
     }
 

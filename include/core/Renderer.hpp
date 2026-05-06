@@ -8,10 +8,14 @@
 #pragma once
 
 #include <ostream>
+#include <vector>
 #include "../scene/Scene.hpp"
 #include "../raytracer/Color.hpp"
 
 namespace RayTracer {
+
+    class BVHNode;
+    class IPrimitive;
 
     class Renderer {
     public:
@@ -20,15 +24,13 @@ namespace RayTracer {
         Renderer(const Renderer&) = default;
         Renderer& operator=(const Renderer&) = default;
 
-        // Renders `scene` in full and writes a PPM P3 image to `out`.
-        // Iterates every pixel, calls traceRay(), applies Lambertian shading.
         void render(const Scene& scene, std::ostream& out) const;
 
     private:
-        // Returns the colour seen along `ray` given the scene's geometry and lights.
-        Color traceRay(const Ray& ray, const Scene& scene) const;
+        Color traceRay(const Ray& ray, const Scene& scene,
+                       const BVHNode* bvh,
+                       const std::vector<const IPrimitive*>& unbounded) const;
 
-        // Clamps `v` to [0, 1] and maps to [0, 255].
         static int toChannel(double v);
     };
 

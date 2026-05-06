@@ -29,6 +29,22 @@ namespace RayTracer {
 
             bool hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const override;
 
+            std::optional<AABB> boundingBox() const override {
+                Math::Point3D top(
+                    _baseCenter.x + _axis.x * _height,
+                    _baseCenter.y + _axis.y * _height,
+                    _baseCenter.z + _axis.z * _height
+                );
+                return AABB(
+                    Math::Point3D(std::min(_baseCenter.x, top.x) - _radius,
+                                  std::min(_baseCenter.y, top.y) - _radius,
+                                  std::min(_baseCenter.z, top.z) - _radius),
+                    Math::Point3D(std::max(_baseCenter.x, top.x) + _radius,
+                                  std::max(_baseCenter.y, top.y) + _radius,
+                                  std::max(_baseCenter.z, top.z) + _radius)
+                );
+            }
+
         private:
             Math::Point3D _baseCenter;
             Math::Vector3D _axis;

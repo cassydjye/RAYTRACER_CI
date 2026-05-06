@@ -8,6 +8,7 @@
 #include "../../include/primitives/Transform.hpp"
 #include "../../include/raytracer/Ray.hpp"
 #include "../../include/raytracer/HitRecord.hpp"
+#include "../../include/raytracer/AABB.hpp"
 
 #include <cmath>
 
@@ -92,6 +93,36 @@ bool Transform::hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) c
     rec.normal   = applyMatrix(_R, objRec.normal);
     rec.material = objRec.material;
     return true;
+}
+
+std::optional<AABB> Transform::boundingBox() const
+{
+    auto inner = _inner->boundingBox();
+    if (!inner.has_value()) return std::nullopt;
+
+    const AABB& b = inner.value();
+    double xs[2] = {b.min.x, b.max.x};
+    double ys[2] = {b.min.y, b.max.y};
+    double zs[2] = {b.min.z, b.max.z};
+
+    double mnx =  1e18, mny =  1e18, mnz =  1e18;
+    double mxx = -1e18, mxy = -1e18, mxz = -1e18;
+
+    for (int i = 0; i < 2; ++i)
+    for (int j = 0; j < 2; ++j)
+    for (int k = 0; k < 2; ++k) {
+        Math::Vector3D corner(xs[i] - _pivot.x, ys[j] - _pivot.y, zs[k] - _pivot.z);
+        Math::Vector3D w = applyMatrix(_R, corner);
+        double wx = _pivot.x + w.x, wy = _pivot.y + w.y, wz = _pivot.z + w.z;
+        if (wx < mnx) mnx = wx;
+        if (wx > mxx) mxx = wx;
+        if (wy < mny) mny = wy;
+        if (wy > mxy) mxy = wy;
+        if (wz < mnz) mnz = wz;
+        if (wz > mxz) mxz = wz;
+    }
+
+    return AABB(Math::Point3D(mnx, mny, mnz), Math::Point3D(mxx, mxy, mxz));
 }
 
 } // namespace RayTracer

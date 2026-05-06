@@ -26,6 +26,7 @@ namespace RayTracer {
                   double rx, double ry, double rz);
 
         bool hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const override;
+        std::optional<AABB> boundingBox() const override;
 
     private:
         std::unique_ptr<IPrimitive> _inner;

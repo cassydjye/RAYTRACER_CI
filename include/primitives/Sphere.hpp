@@ -24,10 +24,14 @@ namespace RayTracer {
         Sphere(const Sphere&) = default;
         Sphere& operator=(const Sphere&) = default;
 
-        bool hits(const Ray& ray,
-                  double tMin,
-                  double tMax,
-                  HitRecord& rec) const override;
+        bool hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const override;
+
+        std::optional<AABB> boundingBox() const override {
+            return AABB(
+                Math::Point3D(_center.x - _radius, _center.y - _radius, _center.z - _radius),
+                Math::Point3D(_center.x + _radius, _center.y + _radius, _center.z + _radius)
+            );
+        }
 
     private:
         Math::Point3D _center;

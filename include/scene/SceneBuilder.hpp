@@ -30,11 +30,12 @@ namespace RayTracer {
         SceneBuilder(SceneBuilder&&) = default;
         SceneBuilder& operator=(SceneBuilder&&) = default;
 
-        SceneBuilder& setCamera(const Camera& camera, int width, int height)
+        SceneBuilder& setCamera(const Camera& camera, int width, int height, int samples = 1)
         {
             _camera = camera;
-            _width  = width;
-            _height = height;
+            _width   = width;
+            _height  = height;
+            _samples = samples;
             _hasCamera = true;
             return *this;
         }
@@ -55,7 +56,7 @@ namespace RayTracer {
         {
             if (!_hasCamera)
                 throw std::runtime_error("SceneBuilder: camera must be set before build()");
-            Scene scene(*_camera, _width, _height);
+            Scene scene(*_camera, _width, _height, _samples);
             for (auto& p : _primitives)
                 scene.addPrimitive(std::move(p));
             for (auto& l : _lights)
@@ -68,8 +69,9 @@ namespace RayTracer {
 
     private:
         std::optional<Camera> _camera;
-        int _width  = 0;
-        int _height = 0;
+        int _width   = 0;
+        int _height  = 0;
+        int _samples = 1;
         bool _hasCamera = false;
         std::vector<std::unique_ptr<IPrimitive>> _primitives;
         std::vector<std::unique_ptr<ILight>>     _lights;
