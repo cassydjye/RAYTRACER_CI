@@ -9,8 +9,8 @@ NAME    = raytracer
 TESTS = tests_run
 
 CXX     = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -Iinclude
-LDFLAGS  = -lconfig++
+CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -O2 -Iinclude -fopenmp
+LDFLAGS  = -lconfig++ -lgomp
 
 SRC = main.cpp \
       src/Help.cpp \
@@ -23,6 +23,8 @@ SRC = main.cpp \
       src/primitives/Cylinder.cpp \
       src/primitives/Triangles.cpp \
       src/primitives/Transform.cpp \
+     src/primitives/Mesh.cpp \
+      src/scene/ObjLoader.cpp \
       src/scene/ConfigParser.cpp \
       src/raytracer/Camera.cpp \
       src/raytracer/Rectangle3D.cpp

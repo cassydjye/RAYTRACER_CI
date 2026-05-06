@@ -24,7 +24,9 @@
 #include "../../include/primitives/Plane.hpp"
 #include "../../include/primitives/Cylinder.hpp"
 #include "../../include/primitives/Triangles.hpp"
+#include "../../include/primitives/Mesh.hpp"
 #include "../../include/primitives/Transform.hpp"
+#include "../../include/scene/ObjLoader.hpp"
 #include "../../include/light/AmbientLight.hpp"
 #include "../../include/light/DirectionalLight.hpp"
 #include "../../include/materials/FlatColor.hpp"
@@ -114,6 +116,44 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
             (v0.z + v1.z + v2.z) / 3.0
         );
         return wrapRotation(std::move(prim), s, centroid);
+    });
+
+    f.registerType("mesh", [](const libconfig::Setting& s) {
+        double ox = s.exists("position") ? asDouble(s["position"]["x"]) : 0.0;
+        double oy = s.exists("position") ? asDouble(s["position"]["y"]) : 0.0;
+        double oz = s.exists("position") ? asDouble(s["position"]["z"]) : 0.0;
+        Math::Point3D position(ox, oy, oz);
+        auto mat = makeMaterial(s);
+        std::unique_ptr<RayTracer::Mesh> prim;
+
+        if (s.exists("file")) {
+            // Load from .obj file.
+            std::string path = s["file"].c_str();
+            prim = std::make_unique<RayTracer::Mesh>(
+                RayTracer::ObjLoader::load(path, position, mat)
+            );
+        } else {
+            // Inline triangle list.
+            std::vector<RayTracer::Triangles> tris;
+            const libconfig::Setting& triList = s["triangles"];
+            for (int i = 0; i < triList.getLength(); ++i) {
+                const libconfig::Setting& t = triList[i];
+                Math::Point3D v0(asDouble(t["v0"]["x"]) + ox,
+                                 asDouble(t["v0"]["y"]) + oy,
+                                 asDouble(t["v0"]["z"]) + oz);
+                Math::Point3D v1(asDouble(t["v1"]["x"]) + ox,
+                                 asDouble(t["v1"]["y"]) + oy,
+                                 asDouble(t["v1"]["z"]) + oz);
+                Math::Point3D v2(asDouble(t["v2"]["x"]) + ox,
+                                 asDouble(t["v2"]["y"]) + oy,
+                                 asDouble(t["v2"]["z"]) + oz);
+                auto triMat = t.exists("color") ? makeMaterial(t) : mat;
+                tris.emplace_back(v0, v1, v2, triMat);
+            }
+            prim = std::make_unique<RayTracer::Mesh>(std::move(tris));
+        }
+
+        return wrapRotation(std::move(prim), s, position);
     });
 
     return f;
@@ -206,9 +246,14 @@ static void parsePrimitives(const libconfig::Setting& primitives,
     for (int g = 0; g < primitives.getLength(); ++g) {
         const libconfig::Setting& group = primitives[g];
         std::string typeName = group.getName();
-        // Strip trailing 's' to get the singular type name.
-        if (!typeName.empty() && typeName.back() == 's')
+        // Derive singular: try stripping "es" first (meshes→mesh), then "s".
+        if (typeName.size() >= 2 && typeName.substr(typeName.size() - 2) == "es") {
+            std::string candidate = typeName.substr(0, typeName.size() - 2);
+            if (factory.knows(candidate)) { typeName = candidate; }
+            else if (!typeName.empty() && typeName.back() == 's') typeName.pop_back();
+        } else if (!typeName.empty() && typeName.back() == 's') {
             typeName.pop_back();
+        }
         if (!factory.knows(typeName))
             throw std::runtime_error("parsePrimitives: no factory for type \"" + typeName + "\"");
         for (int i = 0; i < group.getLength(); ++i)

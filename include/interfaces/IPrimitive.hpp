@@ -25,10 +25,7 @@ namespace RayTracer {
         // On true, `rec` is filled with the hit distance, point, outward normal,
         // and material. On false, `rec` is unchanged.
         // Convention: tMin = 0.001 to avoid self-intersection (shadow acne).
-        virtual bool hits(const Ray& ray,
-                          double tMin,
-                          double tMax,
-                          HitRecord& rec) const = 0;
+        virtual bool hits(const Ray& ray,double tMin, double tMax, HitRecord& rec) const = 0;
     };
 
 }

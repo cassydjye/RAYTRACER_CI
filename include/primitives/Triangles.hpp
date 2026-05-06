@@ -19,18 +19,32 @@
 namespace RayTracer {
     class Triangles : public IPrimitive {
         public:
-            Triangles() = default;
             ~Triangles() = default;
             Triangles(const Triangles&) = default;
             Triangles& operator=(const Triangles&) = default;
-            Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, std::shared_ptr<IMaterial> material) : _v0(v0), _v1(v1), _v2(v2), _material(std::move(material)) {}
+
+            // Flat shading — normal computed from geometry.
+            Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2,
+                      std::shared_ptr<IMaterial> material)
+                : _v0(v0), _v1(v1), _v2(v2), _material(std::move(material)),
+                  _hasVertexNormals(false),
+                  _n0(0,0,0), _n1(0,0,0), _n2(0,0,0) {}
+
+            // Phong shading — per-vertex normals interpolated at hit point.
+            Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2,
+                      const Math::Vector3D& n0, const Math::Vector3D& n1, const Math::Vector3D& n2,
+                      std::shared_ptr<IMaterial> material)
+                : _v0(v0), _v1(v1), _v2(v2), _material(std::move(material)),
+                  _hasVertexNormals(true),
+                  _n0(n0), _n1(n1), _n2(n2) {}
 
             bool hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const override;
 
         private:
-            Math::Point3D _v0, _v1, _v2;
+            Math::Point3D  _v0, _v1, _v2;
             std::shared_ptr<IMaterial> _material;
-
+            bool           _hasVertexNormals;
+            Math::Vector3D _n0, _n1, _n2;
     };
 }
 

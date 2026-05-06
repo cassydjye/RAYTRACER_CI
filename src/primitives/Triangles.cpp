@@ -49,14 +49,19 @@ bool RayTracer::Triangles::hits(const Ray& ray, double tMin, double tMax, HitRec
 
     rec.t = t;
     rec.point = ray.at(t);
-    Math::Vector3D normal(edge1.y * edge2.z - edge1.z * edge2.y,
-                          edge1.z * edge2.x - edge1.x * edge2.z,
-                          edge1.x * edge2.y - edge1.y * edge2.x);
-    Math::Vector3D n = normal.normalize();
+
+    double w = 1.0 - u - v;
+    Math::Vector3D n = _hasVertexNormals
+        ? Math::Vector3D(w*_n0.x + u*_n1.x + v*_n2.x,
+                         w*_n0.y + u*_n1.y + v*_n2.y,
+                         w*_n0.z + u*_n1.z + v*_n2.z).normalize()
+        : Math::Vector3D(edge1.y*edge2.z - edge1.z*edge2.y,
+                         edge1.z*edge2.x - edge1.x*edge2.z,
+                         edge1.x*edge2.y - edge1.y*edge2.x).normalize();
     if (n.dot(ray.direction) > 0.0)
         n = Math::Vector3D(-n.x, -n.y, -n.z);
     rec.normal = n;
-    double w = 1.0 - u - v;
+
     bool onEdge = (u < EDGE_WIDTH || v < EDGE_WIDTH || w < EDGE_WIDTH);
     rec.material = onEdge ? BLACK_EDGE : _material;
 
