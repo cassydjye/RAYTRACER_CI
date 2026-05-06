@@ -14,6 +14,7 @@
 #include "../../include/math/Vector3D.hpp"
 #include <memory>
 #include <cmath>
+#include <initializer_list>
 
 bool RayTracer::Cylinder::hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const
 {
