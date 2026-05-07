@@ -75,13 +75,11 @@ RayTracer::Mesh RayTracer::ObjLoader::load(const std::string& path,
     if (vertices.empty())
         throw std::runtime_error("ObjLoader: no vertices found in " + path);
 
-    // If the OBJ has no vertex normals, compute smooth ones by averaging
-    // the geometric normals of all faces that share each vertex.
+    // Always compute smooth normals as a fallback for faces whose file normals
+    // are missing or out-of-range, so the else branch below is always safe.
     bool useFileNormals = !vnormals.empty();
-    std::vector<Math::Vector3D> smoothNormals;
-
-    if (!useFileNormals) {
-        smoothNormals.assign(vertices.size(), Math::Vector3D(0, 0, 0));
+    std::vector<Math::Vector3D> smoothNormals(vertices.size(), Math::Vector3D(0, 0, 0));
+    {
         auto svValid = [&](int i) { return i >= 0 && static_cast<size_t>(i) < vertices.size(); };
         for (const auto& face : faces) {
             for (size_t i = 1; i + 1 < face.fvs.size(); ++i) {
