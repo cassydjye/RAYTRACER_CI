@@ -36,25 +36,64 @@ jobs:
       #- name: Run tests
       #  run: ./tests_run
 
-      - name: Generate UML diagram from headers
+      - name: Generate UML diagrams from headers
         run: |
-          find src include -name "*.hpp" | sort | xargs -I{} echo "-i {}" | tr '\n' ' ' | xargs hpp2plantuml -o docs/uml/global.puml
-          sed -i '/^\s*+[0-9]/d' docs/uml/global.puml
-          cat docs/uml/global.puml
+          mkdir -p docs/uml
 
-      - name: Generate UML image
+          # Header injected into every diagram for readability
+          cat > /tmp/uml-header.puml <<'EOF'
+          @startuml
+          skinparam dpi 120
+          skinparam classAttributeIconSize 0
+          skinparam nodesep 50
+          skinparam ranksep 70
+          skinparam linetype ortho
+          hide empty members
+          left to right direction
+          EOF
+
+          generate_diagram() {
+            local name="$1"
+            shift
+            local files=()
+            for pattern in "$@"; do
+              while IFS= read -r f; do files+=("-i" "$f"); done < <(find $pattern -name "*.hpp" 2>/dev/null | sort)
+            done
+
+            if [ ${#files[@]} -eq 0 ]; then
+              echo "No headers found for $name, skipping"
+              return
+            fi
+
+            hpp2plantuml "${files[@]}" -o "docs/uml/${name}.puml"
+            sed -i '/^\s*+[0-9]/d' "docs/uml/${name}.puml"
+            sed -i '/^@startuml/d; /^@enduml/d' "docs/uml/${name}.puml"
+            cat /tmp/uml-header.puml "docs/uml/${name}.puml" > /tmp/full.puml
+            echo "@enduml" >> /tmp/full.puml
+            mv /tmp/full.puml "docs/uml/${name}.puml"
+          }
+
+          generate_diagram "interfaces"   include/interfaces
+          generate_diagram "math"         include/math
+          generate_diagram "raytracer"    include/raytracer
+          generate_diagram "primitives"   include/primitives include/interfaces/IPrimitive.hpp
+          generate_diagram "lighting"     include/light include/materials include/interfaces/ILight.hpp include/interfaces/IMaterial.hpp
+          generate_diagram "scene"        include/scene
+          generate_diagram "core"         include/core include/Parser.hpp include/Help.hpp
+
+      - name: Generate UML images
         run: |
           curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
-          java -jar plantuml.jar -tsvg docs/uml/global.puml
-
-      - name: Commit UML if changed
-        if: github.actor != 'github-actions[bot]'
-        run: |
-          git config --global user.name "CI Bot"
-          git config --global user.email "ci@bot.com"
-          git add docs/uml/global.puml docs/uml/global.svg
-          git diff --cached --quiet || git commit -m "update UML diagram"
-          git push
+          java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg docs/uml/*.puml
+              
+            - name: Commit UML if changed
+              if: github.actor != 'github-actions[bot]'
+              run: |
+                git config --global user.name "CI Bot"
+                git config --global user.email "ci@bot.com"
+                git add docs/uml/global.puml docs/uml/global.svg
+                git diff --cached --quiet || git commit -m "update UML diagram"
+                git push
 
   push-to-mirror:
     runs-on: ubuntu-latest
