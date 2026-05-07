@@ -1,3 +1,10 @@
+/*
+** EPITECH PROJECT, 2026
+** RAYTRACER_CI
+** File description:
+** test_help
+*/
+
 #include <criterion/criterion.h>
 #include <iostream>
 #include <sstream>
