@@ -258,8 +258,9 @@ namespace RayTracer {
 	}
 
 	class Transform {
-		+Transform(std::unique_ptr<IPrimitive> inner, const Math::Point3D& pivot, double rx, double ry, double rz)
+		+Transform(std::unique_ptr<IPrimitive> inner, const Math::Point3D& pivot, double rx, double ry, double rz, const Math::Vector3D& translation)
 		-_pivot : Math::Point3D
+		-_translation : Math::Vector3D
 		-{static} applyMatrix(const std::array<double, 9>& m, const Math::Vector3D& v) : Math::Vector3D
 		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
 		-_R : std::array<double, 9>
