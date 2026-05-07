@@ -43,20 +43,30 @@ static double asDouble(const libconfig::Setting& s)
     throw std::runtime_error(std::string("expected a number at: ") + s.getPath());
 }
 
-// ── rotation wrap helper ─────────────────────────────────────────────────────
+// ── transform wrap helper ────────────────────────────────────────────────────
 
 static std::unique_ptr<RayTracer::IPrimitive>
-wrapRotation(std::unique_ptr<RayTracer::IPrimitive> prim,
+wrapTransform(std::unique_ptr<RayTracer::IPrimitive> prim,
              const libconfig::Setting& s,
              const Math::Point3D& pivot)
 {
-    if (!s.exists("rotation"))
+    bool hasRotation = s.exists("rotation");
+    bool hasTranslation = s.exists("translation");
+
+    if (!hasRotation && !hasTranslation)
         return prim;
+
     const double deg = M_PI / 180.0;
-    double rx = s["rotation"].exists("x") ? asDouble(s["rotation"]["x"]) * deg : 0.0;
-    double ry = s["rotation"].exists("y") ? asDouble(s["rotation"]["y"]) * deg : 0.0;
-    double rz = s["rotation"].exists("z") ? asDouble(s["rotation"]["z"]) * deg : 0.0;
-    return std::make_unique<RayTracer::Transform>(std::move(prim), pivot, rx, ry, rz);
+    double rx = hasRotation && s["rotation"].exists("x") ? asDouble(s["rotation"]["x"]) * deg : 0.0;
+    double ry = hasRotation && s["rotation"].exists("y") ? asDouble(s["rotation"]["y"]) * deg : 0.0;
+    double rz = hasRotation && s["rotation"].exists("z") ? asDouble(s["rotation"]["z"]) * deg : 0.0;
+    double tx = hasTranslation && s["translation"].exists("x") ? asDouble(s["translation"]["x"]) : 0.0;
+    double ty = hasTranslation && s["translation"].exists("y") ? asDouble(s["translation"]["y"]) : 0.0;
+    double tz = hasTranslation && s["translation"].exists("z") ? asDouble(s["translation"]["z"]) : 0.0;
+
+    return std::make_unique<RayTracer::Transform>(
+        std::move(prim), pivot, rx, ry, rz, Math::Vector3D(tx, ty, tz)
+    );
 }
 
 // ── material helper ───────────────────────────────────────────────────────────
@@ -83,7 +93,7 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
         auto mat = makeMaterial(s);
         Math::Point3D center(x, y, z);
         auto prim = std::make_unique<RayTracer::Sphere>(center, r, mat);
-        return wrapRotation(std::move(prim), s, center);
+        return wrapTransform(std::move(prim), s, center);
     });
 
     f.registerType("plane", [](const libconfig::Setting& s) {
@@ -92,7 +102,7 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
         auto mat = makeMaterial(s);
         Math::Point3D point(x, y, z);
         auto prim = std::make_unique<RayTracer::Plane>(point, Math::Vector3D(nx, ny, nz), mat);
-        return wrapRotation(std::move(prim), s, point);
+        return wrapTransform(std::move(prim), s, point);
     });
 
     f.registerType("cylinder", [](const libconfig::Setting& s) {
@@ -102,7 +112,7 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
         auto mat = makeMaterial(s);
         Math::Point3D base(x, y, z);
         auto prim = std::make_unique<RayTracer::Cylinder>(base, Math::Vector3D(ax, ay, az), r, h, mat);
-        return wrapRotation(std::move(prim), s, base);
+        return wrapTransform(std::move(prim), s, base);
     });
 
     f.registerType("triangle", [](const libconfig::Setting& s) {
@@ -116,7 +126,7 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
             (v0.y + v1.y + v2.y) / 3.0,
             (v0.z + v1.z + v2.z) / 3.0
         );
-        return wrapRotation(std::move(prim), s, centroid);
+        return wrapTransform(std::move(prim), s, centroid);
     });
 
     f.registerType("mesh", [](const libconfig::Setting& s) {
@@ -154,7 +164,7 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
             prim = std::make_unique<RayTracer::Mesh>(std::move(tris));
         }
 
-        return wrapRotation(std::move(prim), s, position);
+        return wrapTransform(std::move(prim), s, position);
     });
 
     return f;

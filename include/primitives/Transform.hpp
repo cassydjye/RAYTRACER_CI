@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2026
 ** RAYTRACER_CI
 ** File description:
-** Transform — rotation wrapper for any IPrimitive
+** Transform — rotation/translation wrapper for any IPrimitive
 */
 
 #pragma once
@@ -15,7 +15,8 @@
 
 namespace RayTracer {
 
-    // Wraps any IPrimitive with an XYZ Euler rotation around a pivot point.
+    // Wraps any IPrimitive with an XYZ Euler rotation around a pivot point
+    // and a world-space translation.
     // Rotation angles are in radians.
     class Transform : public IPrimitive {
     public:
@@ -23,7 +24,8 @@ namespace RayTracer {
         // pivot: the world-space point to rotate around.
         Transform(std::unique_ptr<IPrimitive> inner,
                   const Math::Point3D& pivot,
-                  double rx, double ry, double rz);
+                  double rx, double ry, double rz,
+                  const Math::Vector3D& translation = Math::Vector3D(0.0, 0.0, 0.0));
 
         bool hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const override;
         std::optional<AABB> boundingBox() const override;
@@ -31,7 +33,8 @@ namespace RayTracer {
     private:
         std::unique_ptr<IPrimitive> _inner;
         Math::Point3D _pivot;
-
+        Math::Vector3D _translation;
+        
         // Row-major 3x3 rotation matrix R and its transpose R^T (= inverse for orthogonal R).
         std::array<double, 9> _R;   // world-from-object: transforms object vectors to world
         std::array<double, 9> _Rt;  // object-from-world: transforms world vectors to object
