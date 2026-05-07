@@ -52,7 +52,7 @@ jobs:
         run: |
           git config --global user.name "CI Bot"
           git config --global user.email "ci@bot.com"
-          git add docs/uml/global.puml docs/uml/global.png
+          git add docs/uml/global.puml docs/uml/global.svg
           git diff --cached --quiet || git commit -m "update UML diagram"
           git push
 
