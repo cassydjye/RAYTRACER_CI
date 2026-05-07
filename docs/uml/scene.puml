@@ -1,0 +1,110 @@
+@startuml
+skinparam dpi 120
+skinparam classAttributeIconSize 0
+skinparam nodesep 50
+skinparam ranksep 70
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+
+
+
+
+/' Objects '/
+
+namespace RayTracer {
+	class ConfigParser {
+		+ConfigParser()
+		+ConfigParser(const ConfigParser &)
+		+~ConfigParser()
+		+operator=(const ConfigParser &) : ConfigParser&
+		+parse(const std::string& filename) : Scene {query}
+	}
+
+	class LightFactory {
+		+LightFactory()
+		+LightFactory(const LightFactory &)
+		+~LightFactory()
+		+operator=(const LightFactory &) : LightFactory&
+		+knows(const std::string& name) : bool {query}
+		+create(const std::string& name, const libconfig::Setting& cfg) : std::unique_ptr<ILight> {query}
+		-_creators : std::unordered_map<std::string, Creator>
+		+registerType(const std::string& name, function<std::unique_ptr<ILight>( const libconfig::Setting& )> creator) : void
+	}
+
+	class ObjLoader {
+		+{static} load(const std::string& path, const Math::Point3D& position, std::shared_ptr<IMaterial> material) : Mesh
+	}
+
+	class PrimitiveFactory {
+		+PrimitiveFactory()
+		+PrimitiveFactory(const PrimitiveFactory &)
+		+~PrimitiveFactory()
+		+operator=(const PrimitiveFactory &) : PrimitiveFactory&
+		+knows(const std::string& name) : bool {query}
+		+create(const std::string& name, const libconfig::Setting& cfg) : std::unique_ptr<IPrimitive> {query}
+		-_creators : std::unordered_map<std::string, Creator>
+		+registerType(const std::string& name, function<std::unique_ptr<IPrimitive>( const libconfig::Setting& )> creator) : void
+	}
+
+	class Scene {
+		+Scene(const Camera& camera, int width, int height, int samples)
+		+Scene(Scene& &)
+		+~Scene()
+		-_camera : Camera
+		+getCamera() : Camera& {query}
+		+operator=(Scene& &) : Scene&
+		-_height : int
+		-_samples : int
+		-_width : int
+		+getHeight() : int {query}
+		+getSamples() : int {query}
+		+getWidth() : int {query}
+		-_lights : std::vector<std::unique_ptr<ILight>>
+		+getLights() : std::vector<std::unique_ptr<ILight>>& {query}
+		-_primitives : std::vector<std::unique_ptr<IPrimitive>>
+		+getPrimitives() : std::vector<std::unique_ptr<IPrimitive>>& {query}
+		+addLight(std::unique_ptr<ILight> l) : void
+		+addPrimitive(std::unique_ptr<IPrimitive> p) : void
+	}
+
+	class SceneBuilder {
+		+SceneBuilder()
+		+SceneBuilder(SceneBuilder& &)
+		+~SceneBuilder()
+		+build() : Scene
+		+addLight(std::unique_ptr<ILight> l) : SceneBuilder&
+		+addPrimitive(std::unique_ptr<IPrimitive> p) : SceneBuilder&
+		+operator=(SceneBuilder& &) : SceneBuilder&
+		+setCamera(const Camera& camera, int width, int height, int samples) : SceneBuilder&
+		-_hasCamera : bool
+		-_height : int
+		-_samples : int
+		-_width : int
+		-_camera : std::optional<Camera>
+		-_lights : std::vector<std::unique_ptr<ILight>>
+		-_primitives : std::vector<std::unique_ptr<IPrimitive>>
+	}
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

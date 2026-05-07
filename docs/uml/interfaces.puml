@@ -1,0 +1,66 @@
+@startuml
+skinparam dpi 120
+skinparam classAttributeIconSize 0
+skinparam nodesep 50
+skinparam ranksep 70
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+
+
+
+
+/' Objects '/
+
+namespace RayTracer {
+	abstract class ILight {
+		+ILight()
+		+ILight(const ILight &)
+		+~ILight()
+		+operator=(const ILight &) : ILight&
+		+{abstract} isAmbient() : bool {query}
+		+{abstract} getAmbient() : double {query}
+		+{abstract} illuminate(const Math::Point3D& point, Math::Vector3D& direction, double& intensity) : void {query}
+	}
+
+	abstract class IMaterial {
+		+IMaterial()
+		+IMaterial(const IMaterial &)
+		+~IMaterial()
+		+{abstract} getColor() : Color {query}
+		+operator=(const IMaterial &) : IMaterial&
+		+getShininess() : double {query}
+		+getSpecular() : double {query}
+	}
+
+	abstract class IPrimitive {
+		+IPrimitive()
+		+IPrimitive(const IPrimitive &)
+		+~IPrimitive()
+		+operator=(const IPrimitive &) : IPrimitive&
+		+{abstract} hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
+	}
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml
