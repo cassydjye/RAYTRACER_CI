@@ -86,15 +86,14 @@ jobs:
           curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
           java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg docs/uml/*.puml
 
-            - name: Commit UML if changed
-              if: github.actor != 'github-actions[bot]'
-              run: |
-                git config --global user.name "CI Bot"
-                git config --global user.email "ci@bot.com"
-                git add docs/uml/*.puml docs/uml/*.svg
-                git diff --cached --quiet || git commit -m "update UML diagram"
-                git push
-
+      - name: Commit UML if changed
+        if: github.actor != 'github-actions[bot]'
+        run: |
+              git config --global user.name "CI Bot"
+              git config --global user.email "ci@bot.com"
+              git add docs/uml/*.puml docs/uml/*.svg
+              git diff --cached --quiet || git commit -m "update UML diagram"
+              git push
   push-to-mirror:
     runs-on: ubuntu-latest
     needs: build-test-uml
