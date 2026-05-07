@@ -45,7 +45,7 @@ jobs:
       - name: Generate UML image
         run: |
           curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
-          java -jar plantuml.jar docs/uml/global.puml
+          java -jar plantuml.jar -tsvg docs/uml/global.puml
 
       - name: Commit UML if changed
         if: github.actor != 'github-actions[bot]'
