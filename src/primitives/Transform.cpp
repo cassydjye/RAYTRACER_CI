@@ -17,8 +17,9 @@ namespace RayTracer {
 // Build R = Rz * Ry * Rx  (XYZ extrinsic order, same convention as the original rotatePoint helper).
 Transform::Transform(std::unique_ptr<IPrimitive> inner,
                      const Math::Point3D& pivot,
-                     double rx, double ry, double rz)
-    : _inner(std::move(inner)), _pivot(pivot)
+                     double rx, double ry, double rz,
+                     const Math::Vector3D& translation)
+    : _inner(std::move(inner)), _pivot(pivot), _translation(translation)
 {
     double cx = std::cos(rx), sx = std::sin(rx);
     double cy = std::cos(ry), sy = std::sin(ry);
@@ -61,11 +62,11 @@ Math::Vector3D Transform::applyMatrix(const std::array<double, 9>& m, const Math
 
 bool Transform::hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) const
 {
-    // Transform ray to object space (apply R^T).
+    // Transform ray to object space: undo translation, then apply R^T.
     Math::Vector3D originOffset(
-        ray.origin.x - _pivot.x,
-        ray.origin.y - _pivot.y,
-        ray.origin.z - _pivot.z
+        ray.origin.x - _translation.x - _pivot.x,
+        ray.origin.y - _translation.y - _pivot.y,
+        ray.origin.z - _translation.z - _pivot.z
     );
     Math::Vector3D objOriginVec = applyMatrix(_Rt, originOffset);
     Math::Point3D  objOrigin(_pivot.x + objOriginVec.x,
@@ -90,6 +91,9 @@ bool Transform::hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) c
     rec.point    = Math::Point3D(_pivot.x + worldHitVec.x,
                                   _pivot.y + worldHitVec.y,
                                   _pivot.z + worldHitVec.z);
+    rec.point    = Math::Point3D(rec.point.x + _translation.x,
+                                  rec.point.y + _translation.y,
+                                  rec.point.z + _translation.z);
     rec.normal   = applyMatrix(_R, objRec.normal);
     rec.material = objRec.material;
     return true;
@@ -113,7 +117,9 @@ std::optional<AABB> Transform::boundingBox() const
     for (int k = 0; k < 2; ++k) {
         Math::Vector3D corner(xs[i] - _pivot.x, ys[j] - _pivot.y, zs[k] - _pivot.z);
         Math::Vector3D w = applyMatrix(_R, corner);
-        double wx = _pivot.x + w.x, wy = _pivot.y + w.y, wz = _pivot.z + w.z;
+        double wx = _pivot.x + w.x + _translation.x;
+        double wy = _pivot.y + w.y + _translation.y;
+        double wz = _pivot.z + w.z + _translation.z;
         if (wx < mnx) mnx = wx;
         if (wx > mxx) mxx = wx;
         if (wy < mny) mny = wy;
