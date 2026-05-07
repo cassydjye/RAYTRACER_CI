@@ -1,0 +1,91 @@
+@startuml
+skinparam dpi 120
+skinparam classAttributeIconSize 0
+skinparam nodesep 50
+skinparam ranksep 70
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+
+
+
+
+/' Objects '/
+
+namespace RayTracer {
+	class Camera {
+		+Camera(const Math::Point3D& origin, const Rectangle3D& screen)
+		+~Camera()
+		+origin : Math::Point3D
+		+ray(double u, double v) : Ray {query}
+		+screen : Rectangle3D
+	}
+
+	class Ray {
+		+Ray(const Math::Point3D& origin, const Math::Vector3D& direction)
+		+~Ray()
+		+at(double t) : Math::Point3D {query}
+		+origin : Math::Point3D
+		+direction : Math::Vector3D
+	}
+
+	class Rectangle3D {
+		+Rectangle3D(const Math::Point3D& origin, const Math::Vector3D& bottom, const Math::Vector3D& left)
+		+origin : Math::Point3D
+		+pointAt(double u, double v) : Math::Point3D {query}
+		+bottom_side : Math::Vector3D
+		+left_side : Math::Vector3D
+	}
+
+	class AABB {
+		+AABB(const Math::Point3D& mn, const Math::Point3D& mx)
+		+{static} merge(const AABB& a, const AABB& b) : AABB
+		+centroid() : Math::Point3D {query}
+		+max : Math::Point3D
+		+min : Math::Point3D
+		+hit(const Ray& ray, double tMin, double tMax) : bool {query}
+	}
+
+	class Color {
+		+Color()
+		+Color(double r, double g, double b)
+		+operator*(double s) : Color {query}
+		+operator*(const Color& o) : Color {query}
+		+operator+(const Color& o) : Color {query}
+		+operator/(double s) : Color {query}
+		+operator+=(const Color& o) : Color&
+		+b : double
+		+g : double
+		+r : double
+	}
+
+	class HitRecord {
+		+t : double
+		+material : std::shared_ptr<IMaterial>
+	}
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+RayTracer.Camera *-- RayTracer.Rectangle3D
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

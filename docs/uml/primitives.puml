@@ -1,0 +1,169 @@
+@startuml
+skinparam dpi 120
+skinparam classAttributeIconSize 0
+skinparam nodesep 50
+skinparam ranksep 70
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+
+
+
+
+/' Objects '/
+
+namespace RayTracer {
+	class Cylinder {
+		+Cylinder()
+		+Cylinder(const Cylinder &)
+		+Cylinder(const Math::Point3D& baseCenter, const Math::Vector3D& axis, double radius, double height, std::shared_ptr<IMaterial> material)
+		+~Cylinder()
+		+operator=(const Cylinder &) : Cylinder&
+		-_baseCenter : Math::Point3D
+		-_axis : Math::Vector3D
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_height : double
+		-_radius : double
+		+boundingBox() : std::optional<AABB> {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	abstract class IPrimitive {
+		+IPrimitive()
+		+IPrimitive(const IPrimitive &)
+		+~IPrimitive()
+		+operator=(const IPrimitive &) : IPrimitive&
+		+{abstract} hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
+	}
+
+	class Mesh {
+		+Mesh(std::vector<Triangles> triangles)
+		+Mesh(Mesh& &)
+		+~Mesh()
+		+operator=(Mesh& &) : Mesh&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
+		-_bvh : std::unique_ptr<BVHNode>
+		-_triangles : std::vector<Triangles>
+	}
+
+	class Plane {
+		+Plane(const Math::Point3D& point, const Math::Vector3D& normal, std::shared_ptr<IMaterial> material)
+		+Plane()
+		+Plane(const Plane &)
+		+~Plane()
+		-_point : Math::Point3D
+		-_normal : Math::Vector3D
+		+operator=(const Plane &) : Plane&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class Sphere {
+		+Sphere(const Math::Point3D& center, double radius, std::shared_ptr<IMaterial> material)
+		+Sphere(const Sphere &)
+		+~Sphere()
+		-_center : Math::Point3D
+		+operator=(const Sphere &) : Sphere&
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_radius : double
+		+boundingBox() : std::optional<AABB> {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class Transform {
+		+Transform(std::unique_ptr<IPrimitive> inner, const Math::Point3D& pivot, double rx, double ry, double rz, const Math::Vector3D& translation)
+		-_pivot : Math::Point3D
+		-_translation : Math::Vector3D
+		-{static} applyMatrix(const std::array<double, 9>& m, const Math::Vector3D& v) : Math::Vector3D
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_R : std::array<double, 9>
+		-_Rt : std::array<double, 9>
+		+boundingBox() : std::optional<AABB> {query}
+		-_inner : std::unique_ptr<IPrimitive>
+	}
+
+	class Triangles {
+		+Triangles(const Triangles &)
+		+Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, std::shared_ptr<IMaterial> material)
+		+Triangles(const Math::Point3D& v0, const Math::Point3D& v1, const Math::Point3D& v2, const Math::Vector3D& n0, const Math::Vector3D& n1, const Math::Vector3D& n2, std::shared_ptr<IMaterial> material)
+		+~Triangles()
+		-_v0 : Math::Point3D
+		-_v1 : Math::Point3D
+		-_v2 : Math::Point3D
+		-_n0 : Math::Vector3D
+		-_n1 : Math::Vector3D
+		-_n2 : Math::Vector3D
+		+operator=(const Triangles &) : Triangles&
+		-_hasVertexNormals : bool
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+boundingBox() : std::optional<AABB> {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
+	class BVHNode {
+		+box : AABB
+		+hit(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		+hitAny(const Ray& ray, double tMin, double tMax) : bool {query}
+		+prim : const IPrimitive*
+		+{static} build(std::vector<const IPrimitive*>& prims, size_t start, size_t end) : std::unique_ptr<BVHNode>
+		+left : std::unique_ptr<BVHNode>
+		+right : std::unique_ptr<BVHNode>
+	}
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+RayTracer.IPrimitive <|-- RayTracer.Cylinder
+
+
+RayTracer.IPrimitive <|-- RayTracer.Mesh
+
+
+RayTracer.IPrimitive <|-- RayTracer.Plane
+
+
+RayTracer.IPrimitive <|-- RayTracer.Sphere
+
+
+RayTracer.IPrimitive <|-- RayTracer.Transform
+
+
+RayTracer.IPrimitive <|-- RayTracer.Triangles
+
+
+
+
+
+/' Aggregation relationships '/
+
+RayTracer.BVHNode "2" o-- RayTracer.BVHNode
+
+
+RayTracer.BVHNode o-- RayTracer.IPrimitive
+
+
+RayTracer.Mesh o-- RayTracer.BVHNode
+
+
+RayTracer.Mesh *-- RayTracer.Triangles
+
+
+RayTracer.Transform o-- RayTracer.IPrimitive
+
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml

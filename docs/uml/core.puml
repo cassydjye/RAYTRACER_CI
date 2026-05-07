@@ -1,0 +1,61 @@
+@startuml
+skinparam dpi 120
+skinparam classAttributeIconSize 0
+skinparam nodesep 50
+skinparam ranksep 70
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+
+
+
+
+/' Objects '/
+
+class Help {
+	+{static} printHelp() : int
+}
+
+
+class Parser {
+	+Parser(int ac, char** av)
+	+~Parser()
+	-_displayHelp : bool
+	+shouldDisplayHelp() : bool {query}
+	-parseArguments(int ac, char** av) : void
+}
+
+
+namespace RayTracer {
+	class Renderer {
+		+Renderer()
+		+Renderer(const Renderer &)
+		+~Renderer()
+		-traceRay(const Ray& ray, const Scene& scene, const BVHNode* bvh, const std::vector<const IPrimitive*>& unbounded) : Color {query}
+		+operator=(const Renderer &) : Renderer&
+		-{static} toChannel(double v) : int
+		+render(const Scene& scene, std::ostream& out) : void {query}
+	}
+}
+
+
+
+
+
+/' Inheritance relationships '/
+
+
+
+
+/' Aggregation relationships '/
+
+
+
+
+
+/' Nested objects '/
+
+
+
+@enduml
