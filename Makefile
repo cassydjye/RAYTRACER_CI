@@ -25,6 +25,7 @@ SRC =  main.cpp \
        src/primitives/Sphere.cpp \
        src/primitives/Plane.cpp \
        src/primitives/Cylinder.cpp \
+       src/primitives/Cone.cpp \
        src/primitives/Triangles.cpp \
        src/primitives/Transform.cpp \
        src/primitives/BVHNode.cpp \
@@ -44,6 +45,7 @@ TEST_SRC =  src/Help.cpp \
             src/primitives/Sphere.cpp \
             src/primitives/Plane.cpp \
             src/primitives/Cylinder.cpp \
+            src/primitives/Cone.cpp \
             src/primitives/Triangles.cpp \
             src/primitives/Transform.cpp \
             src/primitives/BVHNode.cpp \

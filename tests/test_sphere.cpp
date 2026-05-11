@@ -11,6 +11,7 @@
 #include <string>
 #include "../include/Help.hpp"
 #include "../include/primitives/Cylinder.hpp"
+#include "../include/primitives/Cone.hpp"
 #include "../include/primitives/Sphere.hpp"
 #include "../include/raytracer/Ray.hpp"
 #include "../include/math/Point3D.hpp"
@@ -314,4 +315,67 @@ Test(Sphere, NormalIsNormalized)
     );
 
     cr_assert_float_eq(length, 1.0, 1e-6);
+}
+
+Test(Cone, RayHitsSide)
+{
+    Cone cone(
+        Math::Point3D(0, 0, 0),
+        Math::Vector3D(0, 1, 0),
+        1.0,
+        2.0,
+        std::make_shared<DummyMaterial>()
+    );
+    Ray ray(Math::Point3D(0, 1, -5), Math::Vector3D(0, 0, 1));
+    HitRecord rec;
+
+    bool hit = cone.hits(ray, 0.001, 1000.0, rec);
+
+    cr_assert(hit);
+    cr_assert_float_eq(rec.t, 4.5, 1e-6);
+    cr_assert_float_eq(rec.point.x, 0.0, 1e-6);
+    cr_assert_float_eq(rec.point.y, 1.0, 1e-6);
+    cr_assert_float_eq(rec.point.z, -0.5, 1e-6);
+}
+
+Test(Cone, RayHitsBaseCap)
+{
+    Cone cone(
+        Math::Point3D(0, 0, 0),
+        Math::Vector3D(0, 1, 0),
+        1.0,
+        2.0,
+        std::make_shared<DummyMaterial>()
+    );
+    Ray ray(Math::Point3D(0.25, -2, 0.25), Math::Vector3D(0, 1, 0));
+    HitRecord rec;
+
+    bool hit = cone.hits(ray, 0.001, 1000.0, rec);
+
+    cr_assert(hit);
+    cr_assert_float_eq(rec.t, 2.0, 1e-6);
+    cr_assert_float_eq(rec.point.y, 0.0, 1e-6);
+    cr_assert_float_eq(rec.normal.x, 0.0, 1e-6);
+    cr_assert_float_eq(rec.normal.y, -1.0, 1e-6);
+    cr_assert_float_eq(rec.normal.z, 0.0, 1e-6);
+}
+
+Test(Cone, BoundingBox)
+{
+    Cone cone(
+        Math::Point3D(1, 2, 3),
+        Math::Vector3D(0, 1, 0),
+        2.0,
+        4.0,
+        std::make_shared<DummyMaterial>()
+    );
+    auto box = cone.boundingBox();
+
+    cr_assert(box.has_value());
+    cr_assert_float_eq(box->min.x, -1.0, 1e-6);
+    cr_assert_float_eq(box->min.y, 2.0, 1e-6);
+    cr_assert_float_eq(box->min.z, 1.0, 1e-6);
+    cr_assert_float_eq(box->max.x, 3.0, 1e-6);
+    cr_assert_float_eq(box->max.y, 6.0, 1e-6);
+    cr_assert_float_eq(box->max.z, 5.0, 1e-6);
 }
