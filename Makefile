@@ -70,7 +70,7 @@ tests_run:
 	./$(TESTS) --verbose
 
 clean:
-	find . -name "*.o" -delete
+	find . -name "*.o" -delete 2>/dev/null || true
 
 fclean: clean
 	rm -f $(NAME)
