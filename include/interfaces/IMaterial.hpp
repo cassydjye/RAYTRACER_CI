@@ -29,6 +29,9 @@ namespace RayTracer {
 
         // Phong shininess exponent. Higher = tighter highlight.
         virtual double getShininess() const { return 32.0; }
+
+        // Mirror reflectivity [0, 1]. 0 = no reflection, 1 = perfect mirror.
+        virtual double getReflectivity() const { return 0.0; }
     };
 
 }

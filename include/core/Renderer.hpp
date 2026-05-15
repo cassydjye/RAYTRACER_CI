@@ -29,7 +29,8 @@ namespace RayTracer {
     private:
         Color traceRay(const Ray& ray, const Scene& scene,
                        const BVHNode* bvh,
-                       const std::vector<const IPrimitive*>& unbounded) const;
+                       const std::vector<const IPrimitive*>& unbounded,
+                       int depth = 0) const;
 
         static int toChannel(double v);
     };

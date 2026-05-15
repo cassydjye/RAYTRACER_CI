@@ -28,7 +28,8 @@ int RayTracer::Renderer::toChannel(double v)
 RayTracer::Color RayTracer::Renderer::traceRay(
     const Ray& ray, const Scene& scene,
     const BVHNode* bvh,
-    const std::vector<const IPrimitive*>& unbounded) const
+    const std::vector<const IPrimitive*>& unbounded,
+    int depth) const
 {
     HitRecord closest;
     double tMax = std::numeric_limits<double>::infinity();
@@ -118,10 +119,22 @@ RayTracer::Color RayTracer::Renderer::traceRay(
 
     double distance = closest.t * ray.direction.length();
     double fogFactor = std::exp(-0.02 * distance);
-    const double fogMin = 0.40; // Minimum intensity at infinite distance (controls fog density).
+    const double fogMin = 0.40;
     double fadedIntensity = fogMin + (totalIntensity - fogMin) * fogFactor;
 
-    return baseColor * fadedIntensity + specularSum;
+    Color localColor = baseColor * fadedIntensity + specularSum;
+
+    // Mirror reflection: blend local shading with reflected ray color.
+    double kr = closest.material->getReflectivity();
+    if (kr > 0.0 && depth < 8) {
+        Math::Vector3D reflDir = ray.direction.normalize()
+            - closest.normal * (2.0 * closest.normal.dot(ray.direction.normalize()));
+        Ray reflRay(closest.point, reflDir);
+        Color reflColor = traceRay(reflRay, scene, bvh, unbounded, depth + 1);
+        localColor = localColor * (1.0 - kr) + reflColor * kr;
+    }
+
+    return localColor;
 }
 
 // ── render loop ──────────────────────────────────────────────────────────────

@@ -31,6 +31,7 @@
 #include "../../include/light/DirectionalLight.hpp"
 #include "../../include/light/PointLight.hpp"
 #include "../../include/materials/FlatColor.hpp"
+#include "../../include/materials/ReflectiveMaterial.hpp"
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -71,13 +72,16 @@ wrapTransform(std::unique_ptr<RayTracer::IPrimitive> prim,
 
 // ── material helper ───────────────────────────────────────────────────────────
 
-static std::shared_ptr<RayTracer::FlatColor> makeMaterial(const libconfig::Setting& s)
+static std::shared_ptr<RayTracer::IMaterial> makeMaterial(const libconfig::Setting& s)
 {
     double cr = asDouble(s["color"]["r"]) / 255.0;
     double cg = asDouble(s["color"]["g"]) / 255.0;
     double cb = asDouble(s["color"]["b"]) / 255.0;
-    double ks       = s.exists("specular")  ? asDouble(s["specular"])  : 0.0;
-    double shininess = s.exists("shininess") ? asDouble(s["shininess"]) : 32.0;
+    double ks           = s.exists("specular")     ? asDouble(s["specular"])     : 0.0;
+    double shininess    = s.exists("shininess")    ? asDouble(s["shininess"])    : 32.0;
+    double reflectivity = s.exists("reflectivity") ? asDouble(s["reflectivity"]) : 0.0;
+    if (reflectivity > 0.0)
+        return std::make_shared<RayTracer::ReflectiveMaterial>(cr, cg, cb, reflectivity, ks, shininess);
     return std::make_shared<RayTracer::FlatColor>(cr, cg, cb, ks, shininess);
 }
 

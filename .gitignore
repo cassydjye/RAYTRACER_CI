@@ -9,3 +9,5 @@
 TODO.md
 truc.yml
 output.ppm
+*.obj
+*.mtl
