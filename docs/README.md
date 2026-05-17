@@ -138,6 +138,8 @@ For detailed architecture information, see [ARCHI.md](ARCHI.md).
 
 For how the ray tracing algorithm works, see [PROJECT.md](PROJECT.md).
 
+For how to create a primitive, see [PRIMITIVES.md](PRIMITIVES.md)
+
 ---
 
 ## 💾 Output Format
@@ -190,4 +192,5 @@ The engine works backward from the camera:
 
 - [Architecture Overview](ARCHI.md)
 - [Ray Tracing Algorithm](PROJECT.md)
+- [Create a primitive](PRIMITIVES.md)
 - [UML Diagrams](uml/)
