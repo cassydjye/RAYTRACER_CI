@@ -84,7 +84,13 @@ jobs:
       - name: Generate UML images
         run: |
           curl -L -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
-          java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg docs/uml/*.puml
+          shopt -s nullglob
+          puml_files=(docs/uml/*.puml)
+          if [ ${#puml_files[@]} -eq 0 ]; then
+            echo "No .puml files found, skipping image generation"
+          else
+            java -DPLANTUML_LIMIT_SIZE=16384 -jar plantuml.jar -tsvg "${puml_files[@]}"
+          fi
 
       - name: Commit UML if changed
         if: github.actor != 'github-actions[bot]'
