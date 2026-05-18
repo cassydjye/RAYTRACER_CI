@@ -14,6 +14,21 @@ left to right direction
 /' Objects '/
 
 namespace RayTracer {
+	class Cone {
+		+Cone()
+		+Cone(const Math::Point3D& baseCenter, const Math::Vector3D& axis, double radius, double height, std::shared_ptr<IMaterial> material)
+		+Cone(const Cone &)
+		+~Cone()
+		+operator=(const Cone &) : Cone&
+		-_baseCenter : Math::Point3D
+		-_axis : Math::Vector3D
+		+hits(const Ray& ray, double tMin, double tMax, HitRecord& rec) : bool {query}
+		-_height : double
+		-_radius : double
+		+boundingBox() : std::optional<AABB> {query}
+		-_material : std::shared_ptr<IMaterial>
+	}
+
 	class Cylinder {
 		+Cylinder()
 		+Cylinder(const Cylinder &)
@@ -119,6 +134,9 @@ namespace RayTracer {
 
 
 /' Inheritance relationships '/
+
+RayTracer.IPrimitive <|-- RayTracer.Cone
+
 
 RayTracer.IPrimitive <|-- RayTracer.Cylinder
 

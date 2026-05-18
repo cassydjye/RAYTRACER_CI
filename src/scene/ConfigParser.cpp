@@ -23,6 +23,7 @@
 #include "../../include/primitives/Sphere.hpp"
 #include "../../include/primitives/Plane.hpp"
 #include "../../include/primitives/Cylinder.hpp"
+#include "../../include/primitives/Cone.hpp"
 #include "../../include/primitives/Triangles.hpp"
 #include "../../include/primitives/Mesh.hpp"
 #include "../../include/primitives/Transform.hpp"
@@ -116,6 +117,16 @@ static RayTracer::PrimitiveFactory makePrimitiveFactory()
         auto mat = makeMaterial(s);
         Math::Point3D base(x, y, z);
         auto prim = std::make_unique<RayTracer::Cylinder>(base, Math::Vector3D(ax, ay, az), r, h, mat);
+        return wrapTransform(std::move(prim), s, base);
+    });
+
+    f.registerType("cone", [](const libconfig::Setting& s) {
+        double x = asDouble(s["x"]), y = asDouble(s["y"]), z = asDouble(s["z"]);
+        double ax = asDouble(s["ax"]), ay = asDouble(s["ay"]), az = asDouble(s["az"]);
+        double r = asDouble(s["r"]), h = asDouble(s["h"]);
+        auto mat = makeMaterial(s);
+        Math::Point3D base(x, y, z);
+        auto prim = std::make_unique<RayTracer::Cone>(base, Math::Vector3D(ax, ay, az), r, h, mat);
         return wrapTransform(std::move(prim), s, base);
     });
 
