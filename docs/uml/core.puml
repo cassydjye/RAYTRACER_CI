@@ -32,7 +32,7 @@ namespace RayTracer {
 		+Renderer()
 		+Renderer(const Renderer &)
 		+~Renderer()
-		-traceRay(const Ray& ray, const Scene& scene, const BVHNode* bvh, const std::vector<const IPrimitive*>& unbounded) : Color {query}
+		-traceRay(const Ray& ray, const Scene& scene, const BVHNode* bvh, const std::vector<const IPrimitive*>& unbounded, int depth) : Color {query}
 		+operator=(const Renderer &) : Renderer&
 		-{static} toChannel(double v) : int
 		+render(const Scene& scene, std::ostream& out) : void {query}

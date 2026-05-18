@@ -30,6 +30,7 @@ namespace RayTracer {
 		+~IMaterial()
 		+{abstract} getColor() : Color {query}
 		+operator=(const IMaterial &) : IMaterial&
+		+getReflectivity() : double {query}
 		+getShininess() : double {query}
 		+getSpecular() : double {query}
 	}
