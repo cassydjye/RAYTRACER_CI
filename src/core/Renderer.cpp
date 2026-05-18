@@ -28,8 +28,12 @@ int RayTracer::Renderer::toChannel(double v)
 RayTracer::Color RayTracer::Renderer::traceRay(
     const Ray& ray, const Scene& scene,
     const BVHNode* bvh,
+<<<<<<< HEAD
     const std::vector<const IPrimitive*>& unbounded,
     int depth) const
+=======
+    const std::vector<const IPrimitive*>& unbounded) const
+>>>>>>> 5f759d8b2f6b7c8f4269fb4c54707537d8a85965
 {
     HitRecord closest;
     double tMax = std::numeric_limits<double>::infinity();
